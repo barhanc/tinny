@@ -19,6 +19,17 @@ tensor output, resulting in a path-like computation graph. While this limits fle
 branching architectures), it remains extensible. Features like residual connections are still
 achievable via helper layers (e.g. a custom `Residual` layer that ensures correct gradient flow).
 
+The current recommended way to install this package is from source
+```bash
+git clone https://github.com/barhanc/nn-core.git
+cd nn-core
+python3 -m venv venv
+source venv/bin/activate
+pip install -e .
+```
+
+---
+
 This repository also serves as a personal sandbox for implementing and experimenting with different
 models, whether in pure NumPy, PyTorch, or alternative frameworks like tinygrad. As such, you can
 expect new and varied commits over time. See the [notebooks](/notebooks/) directory for examples.
