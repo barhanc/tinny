@@ -1,7 +1,10 @@
 # nn-core
 
 This is a small educational neural network library implemented using NumPy only, which originated
-from my experiments during the Neural Networks and Deep Learning course at AGH University[^1].
+from my experiments during the Neural Networks and Deep Learning course at AGH University (see the
+[course](/notebooks/course/) directory for Jupyter notebooks containing my solutions to course
+assignments, along with personal commentary and critique). 
+
 Currently it contains implementations of:
 
 * Energy-based models (EBMs): Restricted Boltzmann Machines (RBMs) and Deep Belief Networks (DBNs),
@@ -23,5 +26,3 @@ expect new and varied commits over time. See the [notebooks](/notebooks/) direct
 You can also find accompanying theory notes and derivations
 [here](https://barhanc.github.io/notes/machine-learning/deep/dl.pdf).
 
-See the [course](/notebooks/course/) directory for Jupyter notebooks containing my solutions
-to course assignments, along with personal commentary and critique
