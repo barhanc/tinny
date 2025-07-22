@@ -19,7 +19,7 @@ Some general remarks:
   Additionally, I found the imperative style of the RBM implementation limiting. Python supports OOP
   well, so defining RBM/DBN classes that encapsulate both data and behavior would be more elegant
   and maintainable. I was too lazy ot change the entire lab code at the time, but you can see an
-  improved version in the [mnist_dbn.ipynb](../mnist_mlp.ipynb) notebook.
+  improved version in the [mnist_dbn.ipynb](../mnist_dbn.ipynb) notebook.
 
   One minor nitpick: naming conventions like `positive_hidden` feel clunky and overly verbose. Given
   that the lectures use clean and fairly standard mathematical notation, I believe it's acceptable
