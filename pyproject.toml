@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "corenn"
+version = "0.0.0"
+authors = [
+    {name = "Bartosz Hanc", email = "bhanc@student.agh.edu.pl"},
+]
+description = "Toy neural network library implemented from scratch using NumPy"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "numpy",
+    "tqdm",
+]
+
+[project.urls]
+Homepage = "https://github.com/barhanc/core-nn"
+Issues = "https://github.com/barhanc/core-nn/issues"
