@@ -1,1 +1,1 @@
-# core-nn
+# nn-core
