@@ -5,41 +5,39 @@ from numpy.typing import NDArray
 
 
 def zeros(*dims: int) -> NDArray[np.float32]:
-    """Return NDArray of the given shape and type `float32` filled with 0s."""
+    """Return NDArray of the given shape and type float32 filled with 0s."""
     return np.zeros(shape=tuple(dims), dtype=np.float32)
 
 
 def rand(*dims: int) -> NDArray[np.float32]:
-    """
-    Return NDArray of the given shape and type `float32` filled with random numbers sampled
-    independently from uniform distribution over [0;1) interval.
-    """
+    """Return a float32 array of given shape with samples from uniform [0, 1)."""
     return np.random.rand(*dims).astype(np.float32)
 
 
 def randn(*dims: int) -> NDArray[np.float32]:
-    """
-    Return NDArray of the given shape and type `float32` filled with random numbers sampled
-    independently from the standard normal distribution.
-    """
+    """Return a float32 array of given shape with samples from a standard normal distribution."""
     return np.random.randn(*dims).astype(np.float32)
 
 
 def chunks(arr: NDArray, size: int):
-    return (arr[i : i + size] for i in range(0, len(arr), size))
+    """Yield successive chunks of the array with the given size."""
+    for i in range(0, len(arr), size):
+        yield arr[i : i + size]
 
 
 def onehot(y: NDArray) -> NDArray:
+    """Convert class labels to one-hot encoded format."""
     one_hot = zeros(y.shape[0], np.max(y) + 1)
     one_hot[np.arange(y.shape[0]), y] = 1
     return one_hot.astype(np.float32)
 
 
 def tiles(imgs: NDArray):
+    """Display 2D matrices as grayscale tiles from a 4D tensor (rows, cols, height, width)."""
     space = 2
     rows, cols, h, w = imgs.shape
 
-    img_matrix = np.empty(shape=(rows * (h + space) - space, cols * (h + space) - space))
+    img_matrix = np.empty(shape=(rows * (h + space) - space, cols * (w + space) - space))
     img_matrix.fill(np.nan)
 
     for r in range(rows):
@@ -56,7 +54,7 @@ def tiles(imgs: NDArray):
 
 
 def limit_weights(w: NDArray, limit: float) -> NDArray:
-    """Applies the norm limit regularization to weights `w`."""
+    """Apply the norm limit regularization to `w`."""
     if limit == 0:
         return w
     norm = np.linalg.norm(w, ord=2, axis=0)
@@ -65,7 +63,11 @@ def limit_weights(w: NDArray, limit: float) -> NDArray:
 
 
 def sigmoid(x: NDArray, sample: bool = False) -> NDArray:
-    """Return the value sigmoid function"""
+    """
+    Return the value of the sigmoid function.
+
+    NOTE: If `sample=True` return a sample from the binomial distribution with parameter p = σ(x).
+    """
     σ = 1.0 / (1.0 + np.exp(-x))
     if sample:
         return σ > rand(*σ.shape)
@@ -73,12 +75,19 @@ def sigmoid(x: NDArray, sample: bool = False) -> NDArray:
 
 
 def relu(x: NDArray, sample: bool = False) -> NDArray:
+    """
+    Return the value of the ReLU function.
+
+    NOTE: If `sample=True` return a sample from the noisy ReLU (N-ReLU) defined as max(0, x + z *
+    sqrt(σ(x))) where z is a sample from standard normal distribution.
+    """
     if sample:
         return np.maximum(0, x + np.sqrt(sigmoid(x)) * randn(*x.shape))
     return np.maximum(0, x)
 
 
 def softmax(x: NDArray) -> NDArray:
+    """Return the value of the softmax function."""
     m = x.max(axis=1, keepdims=True)
     y: NDArray = np.exp(x - m)
     return y / y.sum(axis=1, keepdims=True)
