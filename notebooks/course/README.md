@@ -38,17 +38,9 @@ Some general remarks:
   As a side note, I believe the backpropagation algorithm could be presented better in lectures. The
   formulation (likely from Bishop) is somewhat outdated. In reality, backprop is just the chain rule
   applied to a computational graph and can be distilled into two key equations:
-  ```math
-  \begin{split} 
   
-  &\frac{\partial L}{\partial \theta^{(i)}_\alpha} 
-  = \sum_\beta \frac{\partial L}{\partial F^{(i)}_\beta} \frac{\partial F^{(i)}_\beta}{\partial \theta^{(i)}_\alpha} \\
-  
-  &\frac{\partial L}{\partial F_\alpha^{(i)}} 
-  = \sum_{j \in \mathscr{N}_i} \sum_\beta \frac{\partial L}{\partial F_\beta^{(j)}} \frac{\partial F_\beta ^{(j)}}{\partial F_\alpha^{(i)}}
-  
-  \end{split}
-  ```
+  ![alt text](backprop.png)
+
   where $L$ is the loss function, $F(\cdot;\theta)$ is a layer (node in the computation graph),
   $\mathscr{N}_i$ is the set of downstream nodes from the node $i$ and $\alpha$, $\beta$ are some
   multi-indices which index the corresponding tensors.
