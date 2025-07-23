@@ -9,6 +9,11 @@ def zeros(*dims: int) -> NDArray[np.float32]:
     return np.zeros(shape=tuple(dims), dtype=np.float32)
 
 
+def ones(*dims: int) -> NDArray[np.float32]:
+    """Return NDArray of the given shape and type float32 filled with 1s."""
+    return np.ones(shape=tuple(dims), dtype=np.float32)
+
+
 def rand(*dims: int) -> NDArray[np.float32]:
     """Return a float32 array of given shape with samples from uniform [0, 1)."""
     return np.random.rand(*dims).astype(np.float32)
