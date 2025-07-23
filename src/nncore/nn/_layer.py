@@ -100,8 +100,7 @@ class Sigmoid(Layer):
         return self.y
 
     def backward(self, grad_y: NDArray) -> NDArray:
-        grad_x = grad_y * (self.y * (1.0 - self.y))
-        return grad_x
+        return grad_y * (self.y * (1.0 - self.y))
 
 
 class ReLU(Layer):
@@ -116,8 +115,22 @@ class ReLU(Layer):
         return self.y
 
     def backward(self, grad_y: NDArray) -> NDArray:
-        grad_x = grad_y * (self.x > 0).astype(np.float32)
-        return grad_x
+        return grad_y * (self.x > 0).astype(np.float32)
+
+
+class Tanh(Layer):
+    def __init__(self):
+        self.x: Optional[NDArray] = None
+        self.y: Optional[NDArray] = None
+        self.reset()
+
+    def forward(self, x: NDArray, training: bool) -> NDArray:
+        self.x = x
+        self.y = np.tanh(x)
+        return self.y
+
+    def backward(self, grad_y: NDArray) -> NDArray:
+        return grad_y * (1 - self.y**2)
 
 
 class Dropout(Layer):
@@ -403,6 +416,7 @@ __all__ = [
     "Sequential",
     "Sigmoid",
     "ReLU",
+    "Tanh",
     "Dropout",
     "Flatten",
     "Linear",
