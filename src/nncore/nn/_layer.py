@@ -457,7 +457,7 @@ class Conv2D(Layer):
         # --------
         # Reshape
         # --------
-        # Shape (C_out, B, H_out * W_out)
+        # Shape (C_out, B, H_out, W_out)
         x = x.reshape(-1, B, H_out, W_out)
         # Shape (B, C_out, H_out, W_out)
         x = x.transpose(1, 0, 2, 3)
