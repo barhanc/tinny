@@ -86,8 +86,8 @@ class Sequential(Layer):
         return self.y
 
     def backward(self, grad_y: NDArray) -> NDArray:
-        for i in reversed(range(len(self.layers))):
-            grad_y = self.layers[i].backward(grad_y)
+        for layer in reversed(self.layers):
+            grad_y = layer.backward(grad_y)
         return grad_y
 
 
