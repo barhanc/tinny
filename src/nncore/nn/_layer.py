@@ -93,8 +93,8 @@ class Sequential(Layer):
 
 class Activation(Layer, ABC):
     def reset(self):
-        self.x: Optional[NDArray] = None
-        self.y: Optional[NDArray] = None
+        self.x = None
+        self.y = None
 
     def parameters(self) -> list[NDArray]:
         return []
@@ -214,44 +214,50 @@ class Linear(Layer):
         self.hsize: int = hsize
         self.init_method: Literal["Xavier", "He"] = init_method
 
-        self.x: Optional[NDArray] = None
-        self.y: Optional[NDArray] = None
+        # ------------------------
+        # Input and output tensors
+        # ------------------------
+        self.x: Optional[NDArray]
+        self.y: Optional[NDArray]
 
+        # ------------------------
         # Parameters and gradients
+        # ------------------------
         self.w: NDArray
         self.b: NDArray
-        self.grad_w: Optional[NDArray] = None
-        self.grad_b: Optional[NDArray] = None
+        self.grad_w: Optional[NDArray]
+        self.grad_b: Optional[NDArray]
 
         self.reset()
 
     def reset(self):
+        # ----------------------
+        # Input and output reset
+        # ----------------------
         self.x = None
         self.y = None
 
+        # ----------------------
         # Weights initialization
+        # ----------------------
         match self.init_method:
             case "Xavier":
                 scale = np.sqrt(6 / (self.vsize + self.hsize))
-                self.w = np.random.uniform(
-                    -scale,
-                    +scale,
-                    size=(self.vsize, self.hsize),
-                ).astype(np.float32)
+                self.w = np.random.uniform(-scale, +scale, size=(self.vsize, self.hsize)).astype(np.float32)
             case "He":
                 scale = np.sqrt(4 / (self.vsize + self.hsize))
-                self.w = np.random.normal(
-                    0,
-                    scale,
-                    size=(self.vsize, self.hsize),
-                ).astype(np.float32)
+                self.w = np.random.normal(0, scale, size=(self.vsize, self.hsize)).astype(np.float32)
             case _:
                 raise ValueError(f"Unrecognised {self.init_method=}")
 
+        # -------------------
         # Bias initialization
+        # -------------------
         self.b = zeros(self.hsize)
 
-        # Gradients
+        # ------------------------
+        # Gradients initialization
+        # ------------------------
         self.grad_w = None
         self.grad_b = None
 
@@ -269,14 +275,20 @@ class Linear(Layer):
     def backward(self, grad_y: NDArray) -> NDArray:
         assert self.x is not None
 
+        # ----------------
         # Compute ∂Loss/∂x
+        # ----------------
         grad_x = grad_y @ self.w.T
 
+        # ------------------------------
         # Compute  ∂Loss/∂w and ∂Loss/∂b
+        # ------------------------------
         self.grad_w = self.x.T @ grad_y
         self.grad_b = grad_y.sum(axis=0)
 
+        # ---------------------------
         # Propagate ∂Loss/∂x backward
+        # ---------------------------
         return grad_x
 
 
@@ -292,37 +304,48 @@ class Conv2D(Layer):
     ):
         self.in_channels: int = in_channels
         self.out_channels: int = out_channels
-        self.kernel_size: tuple[int, int] = (
-            (kernel_size, kernel_size) if isinstance(kernel_size, int) else kernel_size
-        )
+        self.kernel_size: tuple[int, int] = (kernel_size, kernel_size) if isinstance(kernel_size, int) else kernel_size
         self.strides: tuple[int, int] = (strides, strides) if isinstance(strides, int) else strides
         self.padding: tuple[int, int] = (padding, padding) if isinstance(padding, int) else padding
 
         self.init_method: Literal["Xavier", "He"] = init_method
 
-        self.x: Optional[NDArray] = None
-        self.y: Optional[NDArray] = None
+        # ------------------------
+        # Input and output tensors
+        # ------------------------
+        self.x: Optional[NDArray]
+        self.y: Optional[NDArray]
 
+        # ------------------------
         # Parameters and gradients
+        # ------------------------
         self.w: NDArray
         self.b: NDArray
-        self.grad_w: Optional[NDArray] = None
-        self.grad_b: Optional[NDArray] = None
+        self.grad_w: Optional[NDArray]
+        self.grad_b: Optional[NDArray]
 
+        # ------
+        # Other
+        # ------
         # Cached indices for the im2col transformation
-        self.indices: Optional[NDArray[np.intp]] = None
+        self.indices: Optional[NDArray[np.intp]]
         # Cached input after padding and im2col transformation
-        self.xcol: Optional[NDArray] = None
-        # Shape of the last propagated tensor
-        self.dims: Optional[tuple[int, int, int, int]] = None
+        self.xcol: Optional[NDArray]
+        # Shape of the last propagated tensor after padding
+        self.dims: Optional[tuple[int, int, int, int]]
 
         self.reset()
 
     def reset(self):
+        # ----------------------
+        # Input and output reset
+        # ----------------------
         self.x = None
         self.y = None
 
+        # ----------------------
         # Weights initialization
+        # ----------------------
         nrow = self.out_channels
         ncol = self.in_channels * self.kernel_size[0] * self.kernel_size[1]
 
@@ -336,15 +359,21 @@ class Conv2D(Layer):
             case _:
                 raise ValueError(f"Unrecognised {self.init_method=}")
 
+        # -------------------
         # Bias initialization
+        # -------------------
         eps = 0.01  # Initialize biases to small positive values (for ReLU)
         self.b = zeros(self.out_channels, 1) + eps
 
-        # Gradients
+        # ------------------------
+        # Gradients initialization
+        # ------------------------
         self.grad_w = None
         self.grad_b = None
 
-        # Other
+        # --------------------
+        # Other initialization
+        # --------------------
         self.xcol = None
         self.dims = None
         self.indices = None
@@ -362,7 +391,7 @@ class Conv2D(Layer):
 
     def _unpad(self, x: NDArray) -> NDArray:
         assert len(x.shape) == 4
-        *_, H, W = x.shape  # Standard mathematical notation, so pylint: disable=invalid-name
+        *_, H, W = x.shape  # Math notation, so pylint: disable=invalid-name
         pad_h, pad_w = self.padding
         return x[:, :, pad_h : H - pad_h, pad_w : W - pad_w]
 
@@ -370,26 +399,32 @@ class Conv2D(Layer):
         assert len(x.shape) == 4
         assert x.shape[1] == self.in_channels
 
+        # -------------------------------
         # Save the reference to the input
+        # -------------------------------
         self.x = x
 
-        # Standard mathematical notation, so pylint: disable=invalid-name
-        B, C_in, H_in, W_in = x.shape
+        # ---------------------------------
+        # Compute size of the output tensor
+        # ---------------------------------
+        # Math notation, so pylint: disable=invalid-name
+        B, C_in, H_in, W_in = self.x.shape
         H_out = int(1 + (H_in + 2 * self.padding[0] - self.kernel_size[0]) / self.strides[0])
         W_out = int(1 + (W_in + 2 * self.padding[1] - self.kernel_size[1]) / self.strides[1])
         # pylint: enable=invalid-name
 
-        if self.dims != x.shape:
-            use_cached_indices = False
-            self.dims = x.shape
-        else:
-            use_cached_indices = True
-
+        # ----------------------------
         # Apply padding transformation
-        x = self._pad(x)  # (B, C_in, H_in + 2*pad_h, W_in + 2*pad_w)
+        # ----------------------------
+        # Shape (B, C_in, H_in + 2*pad_h, W_in + 2*pad_w)
+        x = self._pad(x)
 
+        # -----------------------------------------
         # Compute indices for im2col transformation
-        if not use_cached_indices:
+        # -----------------------------------------
+        if self.dims != x.shape:
+            self.dims = x.shape
+
             idx_c, idx_h_ker, idx_w_ker = np.indices((C_in, *self.kernel_size)).reshape(3, -1)
             idx_h_out, idx_w_out = np.indices((H_out, W_out)).reshape(2, -1)
 
@@ -406,18 +441,28 @@ class Conv2D(Layer):
             # Shape (C_in * H_ker * W_ker, B * H_out * W_out)
             self.indices = self.indices.reshape(-1, B * H_out * W_out)
 
+        # ---------------------------
         # Apply im2col transformation
+        # ---------------------------
         assert self.indices is not None
-        x = self.xcol = x.take(self.indices)  # (C_in * H_ker * W_ker, B * H_out * W_out)
+        # Shape (C_in * H_ker * W_ker, B * H_out * W_out)
+        x = self.xcol = x.take(self.indices)
 
+        # ---------------------------
         # Apply affine transformation
-        x = self.b + self.w @ x  # (C_out, B * H_out * W_ou)
+        # ---------------------------
+        # Shape (C_out, B * H_out * W_ou)
+        x = self.b + self.w @ x
 
+        # --------
         # Reshape
-        x = x.reshape(-1, B, H_out, W_out)  # (C_out, B, H_out * W_out)
-        x = x.transpose(1, 0, 2, 3)  # (B, C_out, H_out, W_out)
-        self.y = x
+        # --------
+        # Shape (C_out, B, H_out * W_out)
+        x = x.reshape(-1, B, H_out, W_out)
+        # Shape (B, C_out, H_out, W_out)
+        x = x.transpose(1, 0, 2, 3)
 
+        self.y = x
         return self.y
 
     def backward(self, grad_y: NDArray) -> NDArray:
@@ -427,39 +472,55 @@ class Conv2D(Layer):
         assert self.x.shape[1] == self.in_channels
         assert grad_y.shape[1] == self.out_channels
 
-        # Standard mathematical notation, so pylint: disable=invalid-name
+        # ---------------------------------
+        # Compute size of the output tensor
+        # ---------------------------------
+        # Math notation, so pylint: disable=invalid-name
         B, C_in, H_in, W_in = self.x.shape
         H_out = int(1 + (H_in + 2 * self.padding[0] - self.kernel_size[0]) / self.strides[0])
         W_out = int(1 + (W_in + 2 * self.padding[1] - self.kernel_size[1]) / self.strides[1])
         # pylint: enable=invalid-name
 
-        # --- Compute ∂Loss/∂x, ∂Loss/∂w and ∂Loss/∂b
-
+        # ----------------------------------------
         # Backpropagate through reshape operations
-        grad_y = grad_y.transpose(1, 0, 2, 3)  # (C_out, B, H_out, W_out)
-        grad_y = grad_y.reshape(-1, B * H_out * W_out)  # (C_out, B * H_out * W_out)
+        # ----------------------------------------
+        # Shape (C_out, B, H_out, W_out)
+        grad_y = grad_y.transpose(1, 0, 2, 3)
+        # Shape (C_out, B * H_out * W_out)
+        grad_y = grad_y.reshape(-1, B * H_out * W_out)
 
+        # -------------------------------------------
         # Backpropagate through affine transformation
+        # -------------------------------------------
         assert self.xcol is not None
-        x = self.xcol  # (C_in * H_ker * W_ker, B * H_out * W_out)
 
+        # Shape (C_in * H_ker * W_ker, B * H_out * W_out)
+        x = self.xcol
         self.grad_w = grad_y @ x.T
         self.grad_b = grad_y.sum(axis=1, keepdims=True)
 
-        grad_y = self.w.T @ grad_y  # (C_in * H_ker * W_ker, B * H_out * W_out)
+        # Shape (C_in * H_ker * W_ker, B * H_out * W_out)
+        grad_y = self.w.T @ grad_y
 
+        # --------------------------------------
         # Backpropagate through im2col operation
+        # --------------------------------------
+        assert self.indices is not None
+
         dims = (B, C_in, H_in + 2 * self.padding[0], W_in + 2 * self.padding[1])
         grad_x = zeros(*dims).reshape(-1)
 
-        assert self.indices is not None
         for idx, val in zip(self.indices, grad_y):
             grad_x[idx] += val
 
         grad_x = grad_x.reshape(dims)
 
+        # ---------------------------------------
         # Backpropagate through padding operation
+        # ---------------------------------------
         grad_x = self._unpad(grad_x)
 
+        # ---------------------------
         # Propagate ∂Loss/∂x backward
+        # ---------------------------
         return grad_x
