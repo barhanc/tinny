@@ -47,26 +47,34 @@ class SGD(Optimizer):
         self.velocities: list[NDArray] = [zeros(*param.shape) for param in self.parameters]
 
     def apply(self, gradients: list[NDArray]):
-        for θ, v_θ, grad_θ in zip(self.parameters, self.velocities, gradients):
+        for p, v_p, grad_p in zip(self.parameters, self.velocities, gradients):
+            # -----------------------
             # Apply L2 regularization
+            # -----------------------
             if self.l2_penalty:
-                grad_θ += self.l2_penalty * θ
+                grad_p += self.l2_penalty * p
 
+            # -----------------
             # Update velocities
-            v_θ *= self.momentum
-            v_θ -= self.lr * grad_θ
+            # -----------------
+            v_p *= self.momentum
+            v_p -= self.lr * grad_p
 
+            # -----------------
             # Update parameters
+            # -----------------
             if self.nesterov:
-                θ += self.momentum * v_θ - self.lr * grad_θ
+                p += self.momentum * v_p - self.lr * grad_p
             else:
-                θ += v_θ
+                p += v_p
 
+            # --------------------------------
             # Apply weight limit normalization
+            # --------------------------------
             if self.weight_limit:
-                norm = np.linalg.norm(θ, ord=2, axis=0)
+                norm = np.linalg.norm(p, ord=2, axis=0)
                 mask = norm > self.weight_limit
-                θ *= mask * (self.weight_limit / norm) + (~mask) * 1.0
+                p *= mask * (self.weight_limit / norm) + (~mask) * 1.0
 
 
 class Adam(Optimizer):
@@ -77,46 +85,50 @@ class Adam(Optimizer):
         betas: tuple[float, float] = (0.9, 0.999),
         eps: float = 1e-8,
         l2_penalty: Optional[float] = None,
-        weight_limit: Optional[float] = None,
     ):
         self.lr: float = lr
         self.β1: float = betas[0]  # Math notation, so pylint: disable=non-ascii-name
         self.β2: float = betas[1]  # Math notation, so pylint: disable=non-ascii-name
         self.eps: float = eps
         self.l2_penalty: Optional[float] = l2_penalty
-        self.weight_limit: Optional[float] = weight_limit
-
         self.t: int = 0
+
         self.parameters: list[NDArray] = parameters
         self.means: list[NDArray] = [zeros(*param.shape) for param in self.parameters]
         self.variances: list[NDArray] = [zeros(*param.shape) for param in self.parameters]
 
     def apply(self, gradients: list[NDArray]):
+        # ----------------
         # Update time step
+        # ----------------
         self.t += 1
 
-        for θ, m_θ, v_θ, grad_θ in zip(self.parameters, self.means, self.variances, gradients):
+        for p, m_p, v_p, grad_p in zip(self.parameters, self.means, self.variances, gradients):
+            # -----------------------
             # Apply L2 regularization
+            # -----------------------
             if self.l2_penalty:
-                grad_θ += self.l2_penalty * θ
+                grad_p += self.l2_penalty * p
 
+            # ------------
             # Update means
-            m_θ *= self.β1
-            m_θ += (1 - self.β1) * grad_θ
+            # ------------
+            m_p *= self.β1
+            m_p += (1 - self.β1) * grad_p
 
+            # ----------------
             # Update variances
-            v_θ *= self.β2
-            v_θ += (1 - self.β2) * grad_θ**2
+            # ----------------
+            v_p *= self.β2
+            v_p += (1 - self.β2) * grad_p**2
 
+            # ---------------------------
             # Compute unbiased estimators
-            mhat_θ = m_θ / (1 - self.β1**self.t)
-            vhat_θ = v_θ / (1 - self.β2**self.t)
+            # ---------------------------
+            mhat_θ = m_p / (1 - self.β1**self.t)
+            vhat_θ = v_p / (1 - self.β2**self.t)
 
+            # -----------------
             # Update parameters
-            θ -= self.lr * mhat_θ / (self.eps + np.sqrt(vhat_θ))
-
-            # Apply weight limit normalization
-            if self.weight_limit:
-                norm = np.linalg.norm(θ, ord=2, axis=0)
-                mask = norm > self.weight_limit
-                θ *= mask * (self.weight_limit / norm) + (~mask) * 1.0
+            # -----------------
+            p -= self.lr * mhat_θ / (self.eps + np.sqrt(vhat_θ))
