@@ -1,10 +1,12 @@
+# pylint: disable=missing-function-docstring, missing-class-docstring, missing-module-docstring
+
 from typing import Optional
 from abc import abstractmethod, ABC
 
 import numpy as np
 
 from numpy.typing import NDArray
-from ..utils import zeros
+from nncore.utils import zeros
 
 
 class Optimizer(ABC):
@@ -78,8 +80,8 @@ class Adam(Optimizer):
         weight_limit: Optional[float] = None,
     ):
         self.lr: float = lr
-        self.β1: float = betas[0]
-        self.β2: float = betas[1]
+        self.β1: float = betas[0]  # Math notation, so pylint: disable=non-ascii-name
+        self.β2: float = betas[1]  # Math notation, so pylint: disable=non-ascii-name
         self.eps: float = eps
         self.l2_penalty: Optional[float] = l2_penalty
         self.weight_limit: Optional[float] = weight_limit
@@ -118,10 +120,3 @@ class Adam(Optimizer):
                 norm = np.linalg.norm(θ, ord=2, axis=0)
                 mask = norm > self.weight_limit
                 θ *= mask * (self.weight_limit / norm) + (~mask) * 1.0
-
-
-__all__ = [
-    "Optimizer",
-    "SGD",
-    "Adam",
-]

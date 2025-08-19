@@ -1,3 +1,5 @@
+# pylint: disable=missing-function-docstring, missing-class-docstring, missing-module-docstring
+
 from itertools import pairwise
 from typing import Optional, Literal, Callable
 
@@ -5,8 +7,7 @@ import numpy as np
 
 from tqdm import trange
 from numpy.typing import NDArray
-
-from .utils import zeros, limit_weights
+from nncore.utils import zeros, limit_weights
 
 
 class RBM:
@@ -46,10 +47,18 @@ class RBM:
         match self.init_method:
             case "Xavier":
                 scale = np.sqrt(6 / (self.vsize + self.hsize))
-                self.w = np.random.uniform(-scale, +scale, size=(self.vsize, self.hsize)).astype(np.float32)
+                self.w = np.random.uniform(
+                    -scale,
+                    +scale,
+                    size=(self.vsize, self.hsize),
+                ).astype(np.float32)
             case "He":
                 scale = np.sqrt(4 / (self.vsize + self.hsize))
-                self.w = np.random.normal(0, scale, size=(self.vsize, self.hsize)).astype(np.float32)
+                self.w = np.random.normal(
+                    0,
+                    scale,
+                    size=(self.vsize, self.hsize),
+                ).astype(np.float32)
             case _:
                 raise ValueError(f"Unrecognised {self.init_method=}")
 
@@ -57,7 +66,7 @@ class RBM:
         self.b = zeros(self.vsize)
         self.c = zeros(self.hsize)
 
-        # Velocity (momentum) tensor initialization
+        # Velocity (momentum) NDArray initialization
         self.m_w = zeros(self.vsize, self.hsize)
         self.m_b = zeros(self.vsize)
         self.m_c = zeros(self.hsize)
@@ -67,10 +76,10 @@ class RBM:
             self.pc = zeros(self.pc_size, self.hsize)
 
     def probas_v(self, h: NDArray, sample: bool) -> NDArray:
-        return self.v_activation(self.b + h @ self.w.T, sample=sample)
+        return self.v_activation(self.b + h @ self.w.T, sample)
 
     def probas_h(self, v: NDArray, sample: bool) -> NDArray:
-        return self.h_activation(self.c + v @ self.w, sample=sample)
+        return self.h_activation(self.c + v @ self.w, sample)
 
     def sample(self, v: NDArray, steps: int, verbose: bool = False) -> NDArray:
         # Gibbs sampling
@@ -120,7 +129,7 @@ def cdk(rbm: RBM, minibatch: NDArray, k: int = 1):
     # -----------------
 
     # --- Positive phase
-    σ = rbm.probas_h(v, sample=False)
+    σ = rbm.probas_h(v, sample=False)  # Math notation, so pylint: disable=non-ascii-name
 
     grad_w = -1 / batch_size * (v.T @ σ)
     grad_b = -1 / batch_size * (v.sum(axis=0))
@@ -136,7 +145,7 @@ def cdk(rbm: RBM, minibatch: NDArray, k: int = 1):
         v = rbm.probas_v(h, sample=True)
 
     # Negative gradient estimation
-    σ = rbm.probas_h(v, sample=False)
+    σ = rbm.probas_h(v, sample=False)  # Math notation, so pylint: disable=non-ascii-name
 
     grad_w += 1 / batch_size * (v.T @ σ)
     grad_b += 1 / batch_size * (v.sum(axis=0))
@@ -166,6 +175,7 @@ def cdk(rbm: RBM, minibatch: NDArray, k: int = 1):
 
 
 def pcd(rbm: RBM, minibatch: NDArray, k: int = 1):
+    assert rbm.pc_size is not None
     batch_size = minibatch.shape[0]
     v = minibatch
 
@@ -173,7 +183,7 @@ def pcd(rbm: RBM, minibatch: NDArray, k: int = 1):
     # -----------------
 
     # --- Positive phase
-    σ = rbm.probas_h(v, sample=False)
+    σ = rbm.probas_h(v, sample=False)  # Math notation, so pylint: disable=non-ascii-name
 
     grad_w = -1 / batch_size * (v.T @ σ)
     grad_b = -1 / batch_size * (v.sum(axis=0))
@@ -190,7 +200,7 @@ def pcd(rbm: RBM, minibatch: NDArray, k: int = 1):
         v = rbm.probas_v(h, sample=True)
 
     # Negative gradient estimation
-    σ = rbm.probas_h(v, sample=False)
+    σ = rbm.probas_h(v, sample=False)  # Math notation, so pylint: disable=non-ascii-name
 
     grad_w += 1 / rbm.pc_size * (v.T @ σ)
     grad_b += 1 / rbm.pc_size * (v.sum(axis=0))
@@ -220,11 +230,3 @@ def pcd(rbm: RBM, minibatch: NDArray, k: int = 1):
     # Apply weight limit normalization
     if rbm.weight_limit:
         rbm.w = limit_weights(rbm.w, rbm.weight_limit)
-
-
-__all__ = [
-    "RBM",
-    "DBN",
-    "cdk",
-    "pcd",
-]
