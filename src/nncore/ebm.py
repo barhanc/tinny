@@ -31,47 +31,45 @@ class RBM:
         self.v_activation: Callable[[NDArray, bool], NDArray] = v_activation
         self.h_activation: Callable[[NDArray, bool], NDArray] = h_activation
 
-        # Training hyper-params
         self.lr: float = lr
         self.momentum: float = momentum
         self.l1_penalty: Optional[float] = l1_penalty
         self.l2_penalty: Optional[float] = l2_penalty
         self.weight_limit: Optional[float] = weight_limit
 
-        # Initialize
         self.init_method: Literal["Xavier", "He"] = init_method
         self.reset()
 
     def reset(self):
+        # ----------------------
         # Weights initialization
+        # ----------------------
         match self.init_method:
             case "Xavier":
                 scale = np.sqrt(6 / (self.vsize + self.hsize))
-                self.w = np.random.uniform(
-                    -scale,
-                    +scale,
-                    size=(self.vsize, self.hsize),
-                ).astype(np.float32)
+                self.w = np.random.uniform(-scale, +scale, size=(self.vsize, self.hsize)).astype(np.float32)
             case "He":
                 scale = np.sqrt(4 / (self.vsize + self.hsize))
-                self.w = np.random.normal(
-                    0,
-                    scale,
-                    size=(self.vsize, self.hsize),
-                ).astype(np.float32)
+                self.w = np.random.normal(0, scale, size=(self.vsize, self.hsize)).astype(np.float32)
             case _:
                 raise ValueError(f"Unrecognised {self.init_method=}")
 
+        # ---------------------
         # Biases initialization
+        # ---------------------
         self.b = zeros(self.vsize)
         self.c = zeros(self.hsize)
 
-        # Velocity (momentum) NDArray initialization
+        # -----------------------
+        # Momentum initialization
+        # -----------------------
         self.m_w = zeros(self.vsize, self.hsize)
         self.m_b = zeros(self.vsize)
         self.m_c = zeros(self.hsize)
 
+        # -------------------------------
         # Persistent chain initialization
+        # -------------------------------
         if self.pc_size:
             self.pc = zeros(self.pc_size, self.hsize)
 
@@ -82,7 +80,9 @@ class RBM:
         return self.h_activation(self.c + v @ self.w, sample)
 
     def sample(self, v: NDArray, steps: int, verbose: bool = False) -> NDArray:
-        # Gibbs sampling
+        # ----------------------
+        # Perform Gibbs sampling
+        # ----------------------
         for k in trange(steps, desc="Sampling", disable=not verbose):
             h = self.probas_h(v, sample=True)
             v = self.probas_v(h, sample=k < steps - 1)
@@ -125,19 +125,24 @@ def cdk(rbm: RBM, minibatch: NDArray, k: int = 1):
     batch_size = minibatch.shape[0]
     v = minibatch
 
+    # #################
     # Compute gradients
-    # -----------------
+    # #################
 
-    # --- Positive phase
+    # --------------
+    # Positive phase
+    # --------------
     σ = rbm.probas_h(v, sample=False)  # Math notation, so pylint: disable=non-ascii-name
 
     grad_w = -1 / batch_size * (v.T @ σ)
     grad_b = -1 / batch_size * (v.sum(axis=0))
     grad_c = -1 / batch_size * (σ.sum(axis=0))
 
-    # --- Negative phase
+    # --------------
+    # Negative phase
+    # --------------
 
-    # Gibbs sampling
+    # Perform Gibbs sampling
     h = rbm.probas_h(v, sample=True)
     v = rbm.probas_v(h, sample=True)
     for _ in range(k - 1):
@@ -151,10 +156,10 @@ def cdk(rbm: RBM, minibatch: NDArray, k: int = 1):
     grad_b += 1 / batch_size * (v.sum(axis=0))
     grad_c += 1 / batch_size * (σ.sum(axis=0))
 
+    # #############
     # Update params
-    # -------------
+    # #############
 
-    # Apply L1 / L2 regularization
     if rbm.l1_penalty:
         grad_w += rbm.l1_penalty * np.sign(rbm.w)
 
@@ -169,7 +174,6 @@ def cdk(rbm: RBM, minibatch: NDArray, k: int = 1):
     rbm.b += rbm.m_b
     rbm.c += rbm.m_c
 
-    # Apply weight limit normalization
     if rbm.weight_limit:
         rbm.w = limit_weights(rbm.w, rbm.weight_limit)
 
@@ -179,20 +183,25 @@ def pcd(rbm: RBM, minibatch: NDArray, k: int = 1):
     batch_size = minibatch.shape[0]
     v = minibatch
 
+    # #################
     # Compute gradients
-    # -----------------
+    # #################
 
-    # --- Positive phase
+    # --------------
+    # Positive phase
+    # --------------
     σ = rbm.probas_h(v, sample=False)  # Math notation, so pylint: disable=non-ascii-name
 
     grad_w = -1 / batch_size * (v.T @ σ)
     grad_b = -1 / batch_size * (v.sum(axis=0))
     grad_c = -1 / batch_size * (σ.sum(axis=0))
 
-    # --- Negative phase
+    # --------------
+    # Negative phase
+    # --------------
 
-    # Gibbs sampling
-    # Start from persistent chain
+    # Perform Gibbs sampling
+    # NOTE: Start from persistent chain
     h = rbm.pc
     v = rbm.probas_v(h, sample=True)
     for _ in range(k - 1):
@@ -209,10 +218,10 @@ def pcd(rbm: RBM, minibatch: NDArray, k: int = 1):
     # Update persistent chain
     rbm.pc = rbm.probas_h(v, sample=True)
 
+    # #############
     # Update params
-    # -------------
+    # #############
 
-    # Apply L1 / L2 regularization
     if rbm.l1_penalty:
         grad_w += rbm.l1_penalty * np.sign(rbm.w)
 
@@ -227,6 +236,5 @@ def pcd(rbm: RBM, minibatch: NDArray, k: int = 1):
     rbm.b += rbm.m_b
     rbm.c += rbm.m_c
 
-    # Apply weight limit normalization
     if rbm.weight_limit:
         rbm.w = limit_weights(rbm.w, rbm.weight_limit)
