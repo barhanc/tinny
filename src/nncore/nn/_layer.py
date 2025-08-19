@@ -1,3 +1,5 @@
+# pylint: disable=missing-function-docstring, missing-class-docstring, missing-module-docstring
+
 from itertools import chain
 from abc import abstractmethod, ABC
 from typing import Optional, Literal
@@ -5,7 +7,7 @@ from typing import Optional, Literal
 import numpy as np
 
 from numpy.typing import NDArray
-from ..utils import zeros, rand
+from nncore.utils import zeros, rand
 
 
 class Layer(ABC):
@@ -19,21 +21,23 @@ class Layer(ABC):
     # Reference to the outputs of the layer
     y: Optional[NDArray]
 
+    @abstractmethod
     def reset(self) -> None:
         """(Re)Initialize the layer."""
-        self.x = None
-        self.y = None
+        raise NotImplementedError
 
+    @abstractmethod
     def parameters(self) -> list[NDArray]:
         """Return a list of references to the parameters of the layer."""
-        return []
+        raise NotImplementedError
 
+    @abstractmethod
     def gradients(self) -> list[Optional[NDArray]]:
         """
         Return a list of references to the gradients ∂Loss/∂θ of the loss function w.r.t. the
         parameters, in the same order as the `.parameters()` method.
         """
-        return []
+        raise NotImplementedError
 
     @abstractmethod
     def forward(self, x: NDArray, training: bool) -> NDArray:
@@ -83,16 +87,26 @@ class Sequential(Layer):
 
     def backward(self, grad_y: NDArray) -> NDArray:
         for i in reversed(range(len(self.layers))):
-            # Propagate the ∂Loss/∂y backward through layer `i`
             grad_y = self.layers[i].backward(grad_y)
         return grad_y
 
 
-class Sigmoid(Layer):
+class Activation(Layer, ABC):
+    def reset(self):
+        self.x: Optional[NDArray] = None
+        self.y: Optional[NDArray] = None
+
+    def parameters(self) -> list[NDArray]:
+        return []
+
+    def gradients(self) -> list[Optional[NDArray]]:
+        return []
+
+
+class Sigmoid(Activation):
     def __init__(self):
         self.x: Optional[NDArray] = None
         self.y: Optional[NDArray] = None
-        self.reset()
 
     def forward(self, x: NDArray, training: bool) -> NDArray:
         self.x = x
@@ -100,14 +114,14 @@ class Sigmoid(Layer):
         return self.y
 
     def backward(self, grad_y: NDArray) -> NDArray:
+        assert self.y is not None
         return grad_y * (self.y * (1.0 - self.y))
 
 
-class ReLU(Layer):
+class ReLU(Activation):
     def __init__(self):
         self.x: Optional[NDArray] = None
         self.y: Optional[NDArray] = None
-        self.reset()
 
     def forward(self, x: NDArray, training: bool) -> NDArray:
         self.x = x
@@ -115,14 +129,14 @@ class ReLU(Layer):
         return self.y
 
     def backward(self, grad_y: NDArray) -> NDArray:
-        return grad_y * (self.x > 0).astype(np.float32)
+        assert self.y is not None
+        return grad_y * (self.y > 0)
 
 
-class Tanh(Layer):
+class Tanh(Activation):
     def __init__(self):
         self.x: Optional[NDArray] = None
         self.y: Optional[NDArray] = None
-        self.reset()
 
     def forward(self, x: NDArray, training: bool) -> NDArray:
         self.x = x
@@ -130,6 +144,7 @@ class Tanh(Layer):
         return self.y
 
     def backward(self, grad_y: NDArray) -> NDArray:
+        assert self.y is not None
         return grad_y * (1 - self.y**2)
 
 
@@ -138,30 +153,33 @@ class Dropout(Layer):
         assert 0 < p <= 1
         self.x: Optional[NDArray] = None
         self.y: Optional[NDArray] = None
-
         self.p: float = p
-        self.mask: Optional[NDArray] = None
-
-        self.reset()
+        self.mask: Optional[NDArray[np.bool]] = None
 
     def reset(self):
         self.x = None
         self.y = None
         self.mask = None
 
+    def parameters(self) -> list[NDArray]:
+        return []
+
+    def gradients(self) -> list[Optional[NDArray]]:
+        return []
+
     def forward(self, x: NDArray, training: bool) -> NDArray:
         self.x = x
         if training:
             # Save the dropout mask for backward pass
-            self.mask = (rand(*x.shape) > self.p).astype(np.float32)
+            self.mask = rand(*x.shape) > self.p
             self.y = x * self.mask
         else:
             self.y = x * (1 - self.p)
         return self.y
 
     def backward(self, grad_y: NDArray) -> NDArray:
-        grad_x = grad_y * self.mask
-        return grad_x
+        assert self.mask is not None
+        return grad_y * self.mask
 
 
 class Flatten(Layer):
@@ -169,7 +187,16 @@ class Flatten(Layer):
         self.start_dim: int = start_dim
         self.x: Optional[NDArray] = None
         self.y: Optional[NDArray] = None
-        self.reset()
+
+    def reset(self):
+        self.x = None
+        self.y = None
+
+    def parameters(self) -> list[NDArray]:
+        return []
+
+    def gradients(self) -> list[Optional[NDArray]]:
+        return []
 
     def forward(self, x: NDArray, training: bool) -> NDArray:
         self.x = x
@@ -177,8 +204,8 @@ class Flatten(Layer):
         return self.y
 
     def backward(self, grad_y: NDArray) -> NDArray:
-        grad_x = grad_y.reshape(self.x.shape)
-        return grad_x
+        assert self.x is not None
+        return grad_y.reshape(self.x.shape)
 
 
 class Linear(Layer):
@@ -191,8 +218,8 @@ class Linear(Layer):
         self.y: Optional[NDArray] = None
 
         # Parameters and gradients
-        self.w: Optional[NDArray] = None
-        self.b: Optional[NDArray] = None
+        self.w: NDArray
+        self.b: NDArray
         self.grad_w: Optional[NDArray] = None
         self.grad_b: Optional[NDArray] = None
 
@@ -206,16 +233,25 @@ class Linear(Layer):
         match self.init_method:
             case "Xavier":
                 scale = np.sqrt(6 / (self.vsize + self.hsize))
-                self.w = np.random.uniform(-scale, +scale, size=(self.vsize, self.hsize)).astype(np.float32)
+                self.w = np.random.uniform(
+                    -scale,
+                    +scale,
+                    size=(self.vsize, self.hsize),
+                ).astype(np.float32)
             case "He":
                 scale = np.sqrt(4 / (self.vsize + self.hsize))
-                self.w = np.random.normal(0, scale, size=(self.vsize, self.hsize)).astype(np.float32)
+                self.w = np.random.normal(
+                    0,
+                    scale,
+                    size=(self.vsize, self.hsize),
+                ).astype(np.float32)
             case _:
                 raise ValueError(f"Unrecognised {self.init_method=}")
 
         # Bias initialization
         self.b = zeros(self.hsize)
 
+        # Gradients
         self.grad_w = None
         self.grad_b = None
 
@@ -231,6 +267,8 @@ class Linear(Layer):
         return self.y
 
     def backward(self, grad_y: NDArray) -> NDArray:
+        assert self.x is not None
+
         # Compute ∂Loss/∂x
         grad_x = grad_y @ self.w.T
 
@@ -254,7 +292,9 @@ class Conv2D(Layer):
     ):
         self.in_channels: int = in_channels
         self.out_channels: int = out_channels
-        self.kernel_size: tuple[int, int] = (kernel_size, kernel_size) if isinstance(kernel_size, int) else kernel_size
+        self.kernel_size: tuple[int, int] = (
+            (kernel_size, kernel_size) if isinstance(kernel_size, int) else kernel_size
+        )
         self.strides: tuple[int, int] = (strides, strides) if isinstance(strides, int) else strides
         self.padding: tuple[int, int] = (padding, padding) if isinstance(padding, int) else padding
 
@@ -264,13 +304,13 @@ class Conv2D(Layer):
         self.y: Optional[NDArray] = None
 
         # Parameters and gradients
-        self.w: Optional[NDArray] = None
-        self.b: Optional[NDArray] = None
+        self.w: NDArray
+        self.b: NDArray
         self.grad_w: Optional[NDArray] = None
         self.grad_b: Optional[NDArray] = None
 
         # Cached indices for the im2col transformation
-        self.indices: Optional[NDArray] = None
+        self.indices: Optional[NDArray[np.intp]] = None
         # Cached input after padding and im2col transformation
         self.xcol: Optional[NDArray] = None
         # Shape of the last propagated tensor
@@ -300,9 +340,11 @@ class Conv2D(Layer):
         eps = 0.01  # Initialize biases to small positive values (for ReLU)
         self.b = zeros(self.out_channels, 1) + eps
 
+        # Gradients
         self.grad_w = None
         self.grad_b = None
 
+        # Other
         self.xcol = None
         self.dims = None
         self.indices = None
@@ -320,7 +362,7 @@ class Conv2D(Layer):
 
     def _unpad(self, x: NDArray) -> NDArray:
         assert len(x.shape) == 4
-        *_, H, W = x.shape
+        *_, H, W = x.shape  # Standard mathematical notation, so pylint: disable=invalid-name
         pad_h, pad_w = self.padding
         return x[:, :, pad_h : H - pad_h, pad_w : W - pad_w]
 
@@ -328,11 +370,14 @@ class Conv2D(Layer):
         assert len(x.shape) == 4
         assert x.shape[1] == self.in_channels
 
+        # Save the reference to the input
         self.x = x
 
+        # Standard mathematical notation, so pylint: disable=invalid-name
         B, C_in, H_in, W_in = x.shape
         H_out = int(1 + (H_in + 2 * self.padding[0] - self.kernel_size[0]) / self.strides[0])
         W_out = int(1 + (W_in + 2 * self.padding[1] - self.kernel_size[1]) / self.strides[1])
+        # pylint: enable=invalid-name
 
         if self.dims != x.shape:
             use_cached_indices = False
@@ -354,12 +399,16 @@ class Conv2D(Layer):
             idx_w = idx_w_ker.reshape(-1, 1) + self.strides[1] * idx_w_out
 
             multi_index = (idx_b, idx_c, idx_h, idx_w)
-            self.indices = np.ravel_multi_index(multi_index, dims=x.shape)  # (B, C_in * H_ker * W_ker, H_out * W_out)
-            self.indices = self.indices.transpose(1, 0, 2)  # (C_in * H_ker * W_ker, B, H_out * W_out)
-            self.indices = self.indices.reshape(-1, B * H_out * W_out)  # (C_in * H_ker * W_ker, B * H_out * W_out)
+            # Shape (B, C_in * H_ker * W_ker, H_out * W_out)
+            self.indices = np.ravel_multi_index(multi_index, dims=x.shape)
+            # Shape (C_in * H_ker * W_ker, B, H_out * W_out)
+            self.indices = self.indices.transpose(1, 0, 2)
+            # Shape (C_in * H_ker * W_ker, B * H_out * W_out)
+            self.indices = self.indices.reshape(-1, B * H_out * W_out)
 
         # Apply im2col transformation
-        x = self.xcol = np.take(x, self.indices)  # (C_in * H_ker * W_ker, B * H_out * W_out)
+        assert self.indices is not None
+        x = self.xcol = x.take(self.indices)  # (C_in * H_ker * W_ker, B * H_out * W_out)
 
         # Apply affine transformation
         x = self.b + self.w @ x  # (C_out, B * H_out * W_ou)
@@ -372,14 +421,17 @@ class Conv2D(Layer):
         return self.y
 
     def backward(self, grad_y: NDArray) -> NDArray:
+        assert self.x is not None
         assert len(grad_y.shape) == 4
         assert len(self.x.shape) == 4
         assert self.x.shape[1] == self.in_channels
         assert grad_y.shape[1] == self.out_channels
 
+        # Standard mathematical notation, so pylint: disable=invalid-name
         B, C_in, H_in, W_in = self.x.shape
         H_out = int(1 + (H_in + 2 * self.padding[0] - self.kernel_size[0]) / self.strides[0])
         W_out = int(1 + (W_in + 2 * self.padding[1] - self.kernel_size[1]) / self.strides[1])
+        # pylint: enable=invalid-name
 
         # --- Compute ∂Loss/∂x, ∂Loss/∂w and ∂Loss/∂b
 
@@ -388,6 +440,7 @@ class Conv2D(Layer):
         grad_y = grad_y.reshape(-1, B * H_out * W_out)  # (C_out, B * H_out * W_out)
 
         # Backpropagate through affine transformation
+        assert self.xcol is not None
         x = self.xcol  # (C_in * H_ker * W_ker, B * H_out * W_out)
 
         self.grad_w = grad_y @ x.T
@@ -399,6 +452,7 @@ class Conv2D(Layer):
         dims = (B, C_in, H_in + 2 * self.padding[0], W_in + 2 * self.padding[1])
         grad_x = zeros(*dims).reshape(-1)
 
+        assert self.indices is not None
         for idx, val in zip(self.indices, grad_y):
             grad_x[idx] += val
 
@@ -409,16 +463,3 @@ class Conv2D(Layer):
 
         # Propagate ∂Loss/∂x backward
         return grad_x
-
-
-__all__ = [
-    "Layer",
-    "Sequential",
-    "Sigmoid",
-    "ReLU",
-    "Tanh",
-    "Dropout",
-    "Flatten",
-    "Linear",
-    "Conv2D",
-]
