@@ -69,9 +69,14 @@ def limit_weights(w: NDArray, limit: float) -> NDArray[np.float32]:
 
 def sigmoid(x: NDArray, sample: bool = False) -> NDArray[np.float32]:
     """
-    Return the value of the sigmoid function.
-
-    NOTE: If `sample=True` return a sample from the binomial distribution with parameter p = σ(x).
+    If `sample=True` return a sample from the binomial distribution with parameter 
+    ```
+        p = σ(x) = 1 / (1 + exp(-x))
+    ```
+    Otherwise return the value of the logistic sigmoid function
+    ```
+        σ(x) = 1 / (1 + exp(-x)) 
+    ```
     """
     σ = 1.0 / (1.0 + np.exp(-x))  # Math notation, so pylint: disable=non-ascii-name
     if sample:
@@ -81,10 +86,15 @@ def sigmoid(x: NDArray, sample: bool = False) -> NDArray[np.float32]:
 
 def relu(x: NDArray, sample: bool = False) -> NDArray[np.float32]:
     """
-    Return the value of the ReLU function.
-
-    NOTE: If `sample=True` return a sample from the noisy ReLU (N-ReLU) defined as `max(0, x + z *
-    sqrt(σ(x)))` where `z` is a sample from standard normal distribution.
+    If `sample=True` return a sample from the noisy ReLU (N-ReLU) defined as 
+    ```
+        N-ReLU(x) = max(0, x + z * sqrt(σ(x)))
+    ```
+    where `z` is a sample from standard normal distribution. Otherwise return the value of the ReLU
+    function
+    ```
+        ReLU(x) = max(0, x)
+    ```
     """
     if sample:
         return np.maximum(0, x + np.sqrt(sigmoid(x)) * randn(*x.shape)).astype(np.float32)
