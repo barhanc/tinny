@@ -91,7 +91,7 @@ class Sequential(Layer):
         return grad_y
 
 
-class Activation(Layer, ABC):
+class Activation(Layer):
     def reset(self):
         self.x = None
         self.y = None
