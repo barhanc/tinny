@@ -41,7 +41,8 @@ class Layer(ABC):
 
     @abstractmethod
     def forward(self, x: NDArray, training: bool) -> NDArray:
-        """Propagate the input `x` forward through the layer and save the output in `self.y`."""
+        """Propagate the input `x` forward through the layer and return the output. Save the
+        references to the input and output respectively in `self.x` and `self.y`."""
         raise NotImplementedError
 
     @abstractmethod
