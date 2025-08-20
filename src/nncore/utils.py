@@ -83,8 +83,8 @@ def relu(x: NDArray, sample: bool = False) -> NDArray[np.float32]:
     """
     Return the value of the ReLU function.
 
-    NOTE: If `sample=True` return a sample from the noisy ReLU (N-ReLU) defined as max(0, x + z *
-    sqrt(σ(x))) where z is a sample from standard normal distribution.
+    NOTE: If `sample=True` return a sample from the noisy ReLU (N-ReLU) defined as `max(0, x + z *
+    sqrt(σ(x)))` where `z` is a sample from standard normal distribution.
     """
     if sample:
         return np.maximum(0, x + np.sqrt(sigmoid(x)) * randn(*x.shape)).astype(np.float32)
