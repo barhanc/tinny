@@ -1,3 +1,5 @@
+# pylint: disable=missing-module-docstring
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -69,13 +71,13 @@ def limit_weights(w: NDArray, limit: float) -> NDArray[np.float32]:
 
 def sigmoid(x: NDArray, sample: bool = False) -> NDArray[np.float32]:
     """
-    If `sample=True` return a sample from the binomial distribution with parameter 
+    If `sample=True` return a sample from the binomial distribution with parameter
     ```
         p = σ(x) = 1 / (1 + exp(-x))
     ```
     Otherwise return the value of the logistic sigmoid function
     ```
-        σ(x) = 1 / (1 + exp(-x)) 
+        σ(x) = 1 / (1 + exp(-x))
     ```
     """
     σ = 1.0 / (1.0 + np.exp(-x))  # Math notation, so pylint: disable=non-ascii-name
@@ -86,7 +88,7 @@ def sigmoid(x: NDArray, sample: bool = False) -> NDArray[np.float32]:
 
 def relu(x: NDArray, sample: bool = False) -> NDArray[np.float32]:
     """
-    If `sample=True` return a sample from the noisy ReLU (N-ReLU) defined as 
+    If `sample=True` return a sample from the noisy ReLU (N-ReLU) defined as
     ```
         N-ReLU(x) = max(0, x + z * sqrt(σ(x)))
     ```
