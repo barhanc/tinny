@@ -22,6 +22,12 @@ dependencies = [
     "tqdm",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest", 
+    "hypothesis",
+]
+
 [project.urls]
 Homepage = "https://github.com/barhanc/nn-core"
 Issues = "https://github.com/barhanc/nn-core/issues"
