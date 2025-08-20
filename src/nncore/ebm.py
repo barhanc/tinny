@@ -200,8 +200,7 @@ def pcd(rbm: RBM, minibatch: NDArray, k: int = 1):
     # Negative phase
     # --------------
 
-    # Perform Gibbs sampling
-    # NOTE: Start from persistent chain
+    # Perform Gibbs sampling starting from persistent chain
     h = rbm.pc
     v = rbm.probas_v(h, sample=True)
     for _ in range(k - 1):
