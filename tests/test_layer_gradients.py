@@ -38,23 +38,15 @@ def compute_grad_bp(
     return grad_x[j]
 
 
-def some_shape(
-    ndim: int,
-    min_length: int = 1,
-    max_length: int = 128,
-):
+def some_shape(ndim: int, min_length: int = 1, max_length: int = 128):
     return st.tuples(*(st.integers(min_length, max_length) for _ in range(ndim)))
 
 
-def some_tensor(
-    shape: tuple[int, ...],
-    dtype=np.float64,
-    domain: tuple[float, float] = (-5.0, +5.0),
-):
+def some_tensor(*shape: int, dtype=np.float64, domain: tuple[float, float] = (-5.0, +5.0)):
     return hypothesis.extra.numpy.arrays(dtype, shape, elements=st.floats(*domain))
 
 
-def some_multi_index(shape: tuple[int, ...]):
+def some_multi_index(*shape: int):
     return st.tuples(*(st.integers(0, length - 1) for length in shape))
 
 
@@ -65,8 +57,8 @@ def test_activation_grad_correctness(
     shape: tuple[int, int],
     data: st.DataObject,
 ):
-    i = data.draw(some_multi_index(shape), label="Multi-index")
-    x = data.draw(some_tensor(shape), label="Input tensor")
+    i = data.draw(some_multi_index(*shape), label="Multi-index")
+    x = data.draw(some_tensor(*shape), label="Input tensor")
     f = activation_type()
 
     # Skip gradient check at ReLU non-differentiable point
