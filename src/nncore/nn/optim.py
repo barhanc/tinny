@@ -125,10 +125,10 @@ class Adam(Optimizer):
             # ---------------------------
             # Compute unbiased estimators
             # ---------------------------
-            mhat_θ = m_p / (1 - self.β1**self.t)
-            vhat_θ = v_p / (1 - self.β2**self.t)
+            mhat_p = m_p / (1 - self.β1**self.t)
+            vhat_p = v_p / (1 - self.β2**self.t)
 
             # -----------------
             # Update parameters
             # -----------------
-            p -= self.lr * mhat_θ / (self.eps + np.sqrt(vhat_θ))
+            p -= self.lr * mhat_p / (self.eps + np.sqrt(vhat_p))
