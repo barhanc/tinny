@@ -1,6 +1,8 @@
 # pylint: disable=missing-function-docstring, missing-class-docstring, missing-module-docstring
 
-from typing import Final, Literal
+import logging
+
+from typing import Literal
 
 import pytest
 import numpy as np
@@ -11,6 +13,8 @@ from hypothesis import given, assume
 from hypothesis import strategies as some
 
 from nncore import nn
+
+logging.basicConfig(level=logging.DEBUG, format="[%(levelname)s] %(message)s")
 
 
 def compute_grad_x_finite_diff(
@@ -39,12 +43,7 @@ def compute_grad_x_backprop(
     return grad_x[i]
 
 
-# Max and min array dimension size
-MIN_LENGTH: Final[int] = 1
-MAX_LENGTH: Final[int] = 32
-
-
-def some_shape(ndim: int, min_length: int = MIN_LENGTH, max_length: int = MAX_LENGTH):
+def some_shape(ndim: int, min_length: int, max_length):
     return some.tuples(*(some.integers(min_length, max_length) for _ in range(ndim)))
 
 
@@ -57,7 +56,7 @@ def some_multi_index(*shape: int):
 
 
 @pytest.mark.parametrize("activation_type", [nn.Sigmoid, nn.ReLU, nn.Tanh])
-@given(some_shape(ndim=2), some.data())
+@given(some_shape(ndim=2, min_length=1, max_length=256), some.data())
 def test_activation_grad_x_correctness(
     activation_type: type[nn.Activation],
     shape: tuple[int, int],
@@ -74,13 +73,21 @@ def test_activation_grad_x_correctness(
     grad_bp = compute_grad_x_backprop(f, x, i, i)
     grad_fd = compute_grad_x_finite_diff(f, x, i, i)
 
+    logging.info(
+        "%s ∂Yj/∂Xi | %+12.6f | %+12.6f | %.6f",
+        activation_type.__name__,
+        grad_bp,
+        grad_fd,
+        abs(grad_bp - grad_fd),
+    )
+
     assert np.isclose(grad_bp, grad_fd)
 
 
 @given(
-    some.integers(MIN_LENGTH, MAX_LENGTH),
-    some.integers(MIN_LENGTH, MAX_LENGTH),
-    some.integers(MIN_LENGTH, MAX_LENGTH),
+    some.integers(1, 64),
+    some.integers(1, 64),
+    some.integers(1, 64),
     some.one_of(some.just("He"), some.just("Xavier")),
     some.data(),
 )
@@ -99,6 +106,13 @@ def test_linear_grad_x_correctness(
     grad_bp = compute_grad_x_backprop(f, x, i, j)
     grad_fd = compute_grad_x_finite_diff(f, x, i, j)
 
+    logging.info(
+        "Linear ∂Yj/∂Xi | %+12.6f | %+12.6f | %.6f",
+        grad_bp,
+        grad_fd,
+        abs(grad_bp - grad_fd),
+    )
+
     assert np.isclose(grad_bp, grad_fd)
 
 
@@ -106,20 +120,12 @@ def test_linear_grad_params_correctness():
     assert False
 
 
-MIN_KSIZE: Final[int] = 1
-MAX_KSIZE: Final[int] = 7
-MIN_STRIDE: Final[int] = 1
-MAX_STRIDE: Final[int] = 2
-MIN_PADDING: Final[int] = 0
-MAX_PADDING: Final[int] = 2
-
-
 @given(
-    some_shape(ndim=4),
-    some.integers(MIN_LENGTH, MAX_LENGTH),
-    some.tuples(some.integers(MIN_KSIZE, MAX_KSIZE), some.integers(MIN_KSIZE, MAX_KSIZE)),
-    some.tuples(some.integers(MIN_STRIDE, MAX_STRIDE), some.integers(MIN_STRIDE, MAX_STRIDE)),
-    some.tuples(some.integers(MIN_PADDING, MAX_PADDING), some.integers(MIN_PADDING, MAX_PADDING)),
+    some_shape(ndim=4, min_length=1, max_length=8),
+    some.integers(1, 16),
+    some.tuples(some.integers(1, 5), some.integers(1, 5)),
+    some.tuples(some.integers(1, 2), some.integers(1, 2)),
+    some.tuples(some.integers(0, 2), some.integers(0, 2)),
     some.one_of(some.just("He"), some.just("Xavier")),
     some.data(),
 )
@@ -147,6 +153,13 @@ def test_conv2d_grad_x_correctness(
 
     grad_bp = compute_grad_x_backprop(f, x, i, j)
     grad_fd = compute_grad_x_finite_diff(f, x, i, j)
+
+    logging.info(
+        "Conv2D ∂Yj/∂Xi | %+12.6f | %+12.6f | %.6f",
+        grad_bp,
+        grad_fd,
+        abs(grad_bp - grad_fd),
+    )
 
     assert np.isclose(grad_bp, grad_fd)
 
