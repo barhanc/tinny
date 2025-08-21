@@ -14,8 +14,6 @@ from hypothesis import strategies as some
 
 from nncore import nn
 
-logging.basicConfig(level=logging.DEBUG, format="[%(levelname)s] %(message)s")
-
 
 def compute_grad_x_finite_diff(
     f: nn.Layer,
