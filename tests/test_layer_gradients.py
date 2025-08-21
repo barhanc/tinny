@@ -21,8 +21,8 @@ def compute_grad_fd(
 ) -> float:
     dx = np.zeros_like(x)
     dx[j] = eps
-    dy = f.forward(x + dx, training=True) - f.forward(x, training=True)
-    return dy[i] / dx[j]
+    dy = f.forward(x + dx, training=True) - f.forward(x - dx, training=True)
+    return dy[i] / (2 * dx[j])
 
 
 def compute_grad_bp(
