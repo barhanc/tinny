@@ -1,5 +1,6 @@
 # pylint: disable=missing-function-docstring, missing-class-docstring, missing-module-docstring
 
+from typing import Final, Literal
 
 import pytest
 import numpy as np
@@ -7,12 +8,12 @@ import hypothesis.extra.numpy
 
 from numpy.typing import NDArray
 from hypothesis import given, assume
-from hypothesis import strategies as st
+from hypothesis import strategies as some
 
 from nncore import nn
 
 
-def compute_grad_fd(
+def compute_grad_x_finite_diff(
     f: nn.Layer,
     x: NDArray,
     i: tuple[int, ...],
@@ -20,12 +21,12 @@ def compute_grad_fd(
     eps: float = 1e-8,
 ) -> float:
     dx = np.zeros_like(x)
-    dx[j] = eps
+    dx[i] = eps
     dy = f.forward(x + dx, training=True) - f.forward(x - dx, training=True)
-    return dy[i] / (2 * dx[j])
+    return dy[j] / (2 * dx[i])
 
 
-def compute_grad_bp(
+def compute_grad_x_backprop(
     f: nn.Layer,
     x: NDArray,
     i: tuple[int, ...],
@@ -33,29 +34,34 @@ def compute_grad_bp(
 ) -> float:
     y = f.forward(x, training=True)
     grad_y = np.zeros_like(y)
-    grad_y[i] = 1.0
+    grad_y[j] = 1.0
     grad_x = f.backward(grad_y)
-    return grad_x[j]
+    return grad_x[i]
 
 
-def some_shape(ndim: int, min_length: int = 1, max_length: int = 128):
-    return st.tuples(*(st.integers(min_length, max_length) for _ in range(ndim)))
+# Max and min array dimension size
+MIN_LENGTH: Final[int] = 1
+MAX_LENGTH: Final[int] = 32
+
+
+def some_shape(ndim: int, min_length: int = MIN_LENGTH, max_length: int = MAX_LENGTH):
+    return some.tuples(*(some.integers(min_length, max_length) for _ in range(ndim)))
 
 
 def some_tensor(*shape: int, dtype=np.float64, domain: tuple[float, float] = (-5.0, +5.0)):
-    return hypothesis.extra.numpy.arrays(dtype, shape, elements=st.floats(*domain))
+    return hypothesis.extra.numpy.arrays(dtype, shape, elements=some.floats(*domain))
 
 
 def some_multi_index(*shape: int):
-    return st.tuples(*(st.integers(0, length - 1) for length in shape))
+    return some.tuples(*(some.integers(0, length - 1) for length in shape))
 
 
 @pytest.mark.parametrize("activation_type", [nn.Sigmoid, nn.ReLU, nn.Tanh])
-@given(some_shape(ndim=2), st.data())
-def test_activation_grad_correctness(
+@given(some_shape(ndim=2), some.data())
+def test_activation_grad_x_correctness(
     activation_type: type[nn.Activation],
     shape: tuple[int, int],
-    data: st.DataObject,
+    data: some.DataObject,
 ):
     i = data.draw(some_multi_index(*shape), label="Multi-index")
     x = data.draw(some_tensor(*shape), label="Input tensor")
@@ -65,7 +71,85 @@ def test_activation_grad_correctness(
     if activation_type is nn.ReLU:
         assume(not np.isclose(x[i], 0.0))
 
-    grad_bp = compute_grad_bp(f, x, i, i)
-    grad_fd = compute_grad_fd(f, x, i, i)
+    grad_bp = compute_grad_x_backprop(f, x, i, i)
+    grad_fd = compute_grad_x_finite_diff(f, x, i, i)
 
     assert np.isclose(grad_bp, grad_fd)
+
+
+@given(
+    some.integers(MIN_LENGTH, MAX_LENGTH),
+    some.integers(MIN_LENGTH, MAX_LENGTH),
+    some.integers(MIN_LENGTH, MAX_LENGTH),
+    some.one_of(some.just("He"), some.just("Xavier")),
+    some.data(),
+)
+def test_linear_grad_x_correctness(
+    batch_size: int,
+    in_features: int,
+    out_features: int,
+    init_method: Literal["He", "Xavier"],
+    data: some.DataObject,
+):
+    i = data.draw(some_multi_index(batch_size, in_features), label="Input multi-index")
+    j = data.draw(some_multi_index(batch_size, out_features), label="Output multi-index")
+    x = data.draw(some_tensor(batch_size, in_features), label="Input tensor")
+    f = nn.Linear(in_features, out_features, init_method)
+
+    grad_bp = compute_grad_x_backprop(f, x, i, j)
+    grad_fd = compute_grad_x_finite_diff(f, x, i, j)
+
+    assert np.isclose(grad_bp, grad_fd)
+
+
+def test_linear_grad_params_correctness():
+    assert False
+
+
+MIN_KSIZE: Final[int] = 1
+MAX_KSIZE: Final[int] = 7
+MIN_STRIDE: Final[int] = 1
+MAX_STRIDE: Final[int] = 2
+MIN_PADDING: Final[int] = 0
+MAX_PADDING: Final[int] = 2
+
+
+@given(
+    some_shape(ndim=4),
+    some.integers(MIN_LENGTH, MAX_LENGTH),
+    some.tuples(some.integers(MIN_KSIZE, MAX_KSIZE), some.integers(MIN_KSIZE, MAX_KSIZE)),
+    some.tuples(some.integers(MIN_STRIDE, MAX_STRIDE), some.integers(MIN_STRIDE, MAX_STRIDE)),
+    some.tuples(some.integers(MIN_PADDING, MAX_PADDING), some.integers(MIN_PADDING, MAX_PADDING)),
+    some.one_of(some.just("He"), some.just("Xavier")),
+    some.data(),
+)
+def test_conv2d_grad_x_correctness(
+    in_shape: tuple[int, int, int, int],
+    out_channels: int,
+    kernel_size: tuple[int, int],
+    strides: tuple[int, int],
+    padding: tuple[int, int],
+    init_method: Literal["Xavier", "He"],
+    data: some.DataObject,
+):
+    # Standard notation when describing convolutions, so pylint: disable=invalid-name
+    B, in_channels, H, W = in_shape
+    H_out = int(1 + (H + 2 * padding[0] - kernel_size[0]) / strides[0])
+    W_out = int(1 + (W + 2 * padding[1] - kernel_size[1]) / strides[1])
+    # pylint: enable=invalid-name
+
+    assume(H_out >= 1 and W_out >= 1)
+
+    i = data.draw(some_multi_index(*in_shape), "Input multi-index")
+    j = data.draw(some_multi_index(B, out_channels, H_out, W_out), "Output multi-index")
+    x = data.draw(some_tensor(*in_shape), "Input image")
+    f = nn.Conv2D(in_channels, out_channels, kernel_size, strides, padding, init_method)
+
+    grad_bp = compute_grad_x_backprop(f, x, i, j)
+    grad_fd = compute_grad_x_finite_diff(f, x, i, j)
+
+    assert np.isclose(grad_bp, grad_fd)
+
+
+def test_conv2d_grad_params_correctness():
+    assert False
