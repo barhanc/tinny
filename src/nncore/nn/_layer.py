@@ -6,7 +6,7 @@ from typing import Optional, Literal
 
 import numpy as np
 
-from numpy.typing import NDArray
+from numpy.typing import NDArray, DTypeLike
 from nncore.utils import zeros, rand
 
 
@@ -210,10 +210,17 @@ class Flatten(Layer):
 
 
 class Linear(Layer):
-    def __init__(self, vsize: int, hsize: int, init_method: Literal["Xavier", "He"]):
+    def __init__(
+        self,
+        vsize: int,
+        hsize: int,
+        init_method: Literal["Xavier", "He"],
+        dtype: DTypeLike = np.float32,
+    ):
         self.vsize: int = vsize
         self.hsize: int = hsize
         self.init_method: Literal["Xavier", "He"] = init_method
+        self.dtype: DTypeLike = dtype
 
         # ------------------------
         # Input and output tensors
@@ -244,10 +251,10 @@ class Linear(Layer):
         match self.init_method:
             case "Xavier":
                 scale = np.sqrt(6 / (self.vsize + self.hsize))
-                self.w = np.random.uniform(-scale, +scale, size=(self.vsize, self.hsize)).astype(np.float32)
+                self.w = np.random.uniform(-scale, +scale, size=(self.vsize, self.hsize)).astype(self.dtype)
             case "He":
                 scale = np.sqrt(4 / (self.vsize + self.hsize))
-                self.w = np.random.normal(0, scale, size=(self.vsize, self.hsize)).astype(np.float32)
+                self.w = np.random.normal(0, scale, size=(self.vsize, self.hsize)).astype(self.dtype)
             case _:
                 raise ValueError(f"Unrecognised {self.init_method=}")
 
@@ -302,6 +309,7 @@ class Conv2D(Layer):
         strides: int | tuple[int, int],
         padding: int | tuple[int, int],
         init_method: Literal["Xavier", "He"],
+        dtype: DTypeLike = np.float32,
     ):
         self.in_channels: int = in_channels
         self.out_channels: int = out_channels
@@ -310,6 +318,7 @@ class Conv2D(Layer):
         self.padding: tuple[int, int] = (padding, padding) if isinstance(padding, int) else padding
 
         self.init_method: Literal["Xavier", "He"] = init_method
+        self.dtype: DTypeLike = dtype
 
         # ------------------------
         # Input and output tensors
@@ -353,10 +362,10 @@ class Conv2D(Layer):
         match self.init_method:
             case "Xavier":
                 scale = np.sqrt(6 / (nrow + ncol))
-                self.w = np.random.uniform(-scale, +scale, size=(nrow, ncol)).astype(np.float32)
+                self.w = np.random.uniform(-scale, +scale, size=(nrow, ncol)).astype(self.dtype)
             case "He":
                 scale = np.sqrt(4 / (nrow + ncol))
-                self.w = np.random.normal(0, scale, size=(nrow, ncol)).astype(np.float32)
+                self.w = np.random.normal(0, scale, size=(nrow, ncol)).astype(self.dtype)
             case _:
                 raise ValueError(f"Unrecognised {self.init_method=}")
 
