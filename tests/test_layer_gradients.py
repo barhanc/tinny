@@ -192,10 +192,6 @@ def test_linear_grad_params_correctness(
     j = data.draw(some_multi_index(batch_size, out_features), "Output multi-index")
     x = data.draw(some_tensor(batch_size, in_features), "Input tensor")
 
-    # Skip gradient check if input is all 0s, as in such case it is not possible to compute grad_w
-    # using finite difference method
-    assume(not np.allclose(x[:, idxs[0][0]], 0.0))
-
     grads_bp = compute_grad_params_backprop(deepcopy(f), x, idxs, j)
     grads_fd = compute_grad_params_finite_diff(deepcopy(f), x, idxs, j)
 
