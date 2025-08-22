@@ -5,9 +5,7 @@ from abc import abstractmethod, ABC
 from typing import Optional, Literal
 
 import numpy as np
-
 from numpy.typing import NDArray, DTypeLike
-from nncore.utils import zeros, rand
 
 
 class Layer(ABC):
@@ -172,7 +170,7 @@ class Dropout(Layer):
         self.x = x
         if training:
             # Save the dropout mask for backward pass
-            self.mask = rand(*x.shape) > self.p
+            self.mask = np.random.rand(*x.shape) > self.p
             self.y = x * self.mask
         else:
             self.y = x * (1 - self.p)
@@ -261,7 +259,7 @@ class Linear(Layer):
         # -------------------
         # Bias initialization
         # -------------------
-        self.b = zeros(self.hsize)
+        self.b = np.zeros(shape=(self.hsize,), dtype=self.dtype)
 
         # ------------------------
         # Gradients initialization
@@ -373,7 +371,7 @@ class Conv2D(Layer):
         # Bias initialization
         # -------------------
         eps = 0.01  # Initialize biases to small positive values (for ReLU)
-        self.b = zeros(self.out_channels, 1) + eps
+        self.b = np.zeros(shape=(self.out_channels, 1), dtype=self.dtype) + eps
 
         # ------------------------
         # Gradients initialization
@@ -518,7 +516,7 @@ class Conv2D(Layer):
         assert self.indices is not None
 
         dims = (B, C_in, H_in + 2 * self.padding[0], W_in + 2 * self.padding[1])
-        grad_x = zeros(*dims).reshape(-1)
+        grad_x = np.zeros(dims, dtype=self.dtype).reshape(-1)
 
         for idx, val in zip(self.indices, grad_y):
             grad_x[idx] += val
