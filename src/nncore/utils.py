@@ -1,42 +1,36 @@
-# pylint: disable=missing-module-docstring
+# pylint: disable=missing-function-docstring, missing-class-docstring, missing-module-docstring
 
 import numpy as np
 import matplotlib.pyplot as plt
 
-from numpy.typing import NDArray
+from numpy.typing import NDArray, DTypeLike
 
 
-def zeros(*dims: int) -> NDArray[np.float32]:
-    """Return NDArray of the given shape and type float32 filled with 0s."""
-    return np.zeros(shape=tuple(dims), dtype=np.float32)
+def zeros(*dims: int, dtype: DTypeLike = np.float32) -> NDArray:
+    return np.zeros(shape=tuple(dims), dtype=dtype)
 
 
-def ones(*dims: int) -> NDArray[np.float32]:
-    """Return NDArray of the given shape and type float32 filled with 1s."""
-    return np.ones(shape=tuple(dims), dtype=np.float32)
+def ones(*dims: int, dtype: DTypeLike = np.float32) -> NDArray:
+    return np.ones(shape=tuple(dims), dtype=dtype)
 
 
-def rand(*dims: int) -> NDArray[np.float32]:
-    """Return a float32 array of given shape with samples from uniform [0, 1)."""
-    return np.random.rand(*dims).astype(np.float32)
+def rand(*dims: int, dtype: DTypeLike = np.float32) -> NDArray:
+    return np.random.rand(*dims).astype(dtype)
 
 
-def randn(*dims: int) -> NDArray[np.float32]:
-    """Return a float32 array of given shape with samples from a standard normal distribution."""
-    return np.random.randn(*dims).astype(np.float32)
+def randn(*dims: int, dtype: DTypeLike = np.float32) -> NDArray:
+    return np.random.randn(*dims).astype(dtype)
 
 
 def chunks(arr: NDArray, size: int):
-    """Yield successive chunks of the array with the given size."""
     for i in range(0, len(arr), size):
         yield arr[i : i + size]
 
 
-def onehot(y: NDArray) -> NDArray[np.float32]:
-    """Convert class labels to one-hot encoded format."""
+def onehot(y: NDArray, dtype: DTypeLike = np.float32) -> NDArray:
     one_hot = zeros(y.shape[0], np.max(y) + 1)
     one_hot[np.arange(y.shape[0]), y] = 1
-    return one_hot.astype(np.float32)
+    return one_hot.astype(dtype)
 
 
 def tiles(imgs: NDArray):
@@ -60,16 +54,16 @@ def tiles(imgs: NDArray):
     plt.show()
 
 
-def limit_weights(w: NDArray, limit: float) -> NDArray[np.float32]:
+def limit_weights(w: NDArray, limit: float) -> NDArray:
     """Apply the norm limit regularization to `w`."""
     if limit == 0:
         return w
     norm = np.linalg.norm(w, ord=2, axis=0)
     mask = norm > limit
-    return (w * (mask * (limit / norm) + (~mask) * 1.0)).astype(np.float32)
+    return w * (mask * (limit / norm) + (~mask) * 1.0)
 
 
-def sigmoid(x: NDArray, sample: bool = False) -> NDArray[np.float32]:
+def sigmoid(x: NDArray, sample: bool = False) -> NDArray:
     """
     If `sample=True` return a sample from the binomial distribution with parameter
     ```
@@ -82,11 +76,11 @@ def sigmoid(x: NDArray, sample: bool = False) -> NDArray[np.float32]:
     """
     σ = 1.0 / (1.0 + np.exp(-x))  # Math notation, so pylint: disable=non-ascii-name
     if sample:
-        return (σ > rand(*σ.shape)).astype(np.float32)
-    return σ.astype(np.float32)
+        return σ > rand(*σ.shape)
+    return σ
 
 
-def relu(x: NDArray, sample: bool = False) -> NDArray[np.float32]:
+def relu(x: NDArray, sample: bool = False) -> NDArray:
     """
     If `sample=True` return a sample from the noisy ReLU (N-ReLU) defined as
     ```
@@ -99,12 +93,12 @@ def relu(x: NDArray, sample: bool = False) -> NDArray[np.float32]:
     ```
     """
     if sample:
-        return np.maximum(0, x + np.sqrt(sigmoid(x)) * randn(*x.shape)).astype(np.float32)
-    return np.maximum(0, x).astype(np.float32)
+        return np.maximum(0, x + np.sqrt(sigmoid(x)) * randn(*x.shape))
+    return np.maximum(0, x)
 
 
-def softmax(x: NDArray) -> NDArray[np.float32]:
+def softmax(x: NDArray) -> NDArray:
     """Return the value of the softmax function."""
     m = x.max(axis=1, keepdims=True)
     y: NDArray = np.exp(x - m)
-    return (y / y.sum(axis=1, keepdims=True)).astype(np.float32)
+    return y / y.sum(axis=1, keepdims=True)
