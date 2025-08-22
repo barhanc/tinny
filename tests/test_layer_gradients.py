@@ -3,6 +3,7 @@
 import logging
 
 from typing import Literal
+from itertools import pairwise
 
 import pytest
 import numpy as np
@@ -13,6 +14,10 @@ from hypothesis import given, assume
 from hypothesis import strategies as some
 
 from nncore import nn
+
+# #########################################################
+# Helper functions
+# #########################################################
 
 
 def compute_grad_x_finite_diff(
@@ -53,6 +58,11 @@ def some_multi_index(*shape: int):
     return some.tuples(*(some.integers(0, length - 1) for length in shape))
 
 
+# #########################################################
+# Tests
+# #########################################################
+
+
 @pytest.mark.parametrize("activation_type", [nn.Sigmoid, nn.ReLU, nn.Tanh])
 @given(some_shape(ndim=2, min_length=1, max_length=256), some.data())
 def test_activation_grad_x_correctness(
@@ -72,7 +82,7 @@ def test_activation_grad_x_correctness(
     grad_fd = compute_grad_x_finite_diff(f, x, i, i)
 
     logging.info(
-        "%s ∂Yj/∂Xi | %+12.6f | %+12.6f | %.6f",
+        "%s ∂Yj/∂Xi , %+12.6f , %+12.6f , %.6f",
         activation_type.__name__,
         grad_bp,
         grad_fd,
@@ -105,7 +115,7 @@ def test_linear_grad_x_correctness(
     grad_fd = compute_grad_x_finite_diff(f, x, i, j)
 
     logging.info(
-        "Linear ∂Yj/∂Xi | %+12.6f | %+12.6f | %.6f",
+        "Linear ∂Yj/∂Xi , %+12.6f , %+12.6f , %.6f",
         grad_bp,
         grad_fd,
         abs(grad_bp - grad_fd),
@@ -153,7 +163,7 @@ def test_conv2d_grad_x_correctness(
     grad_fd = compute_grad_x_finite_diff(f, x, i, j)
 
     logging.info(
-        "Conv2D ∂Yj/∂Xi | %+12.6f | %+12.6f | %.6f",
+        "Conv2D ∂Yj/∂Xi , %+12.6f , %+12.6f , %.6f",
         grad_bp,
         grad_fd,
         abs(grad_bp - grad_fd),
@@ -164,3 +174,36 @@ def test_conv2d_grad_x_correctness(
 
 def test_conv2d_grad_params_correctness():
     assert False
+
+
+@given(
+    some.integers(1, 64),
+    some.lists(some.integers(1, 64), min_size=1, max_size=8),
+    some.data(),
+)
+def test_sequential_grad_flow_correctness(
+    batch_size: int,
+    dims: list[int],
+    data: some.DataObject,
+):
+    layers = []
+    for dim_a, dim_b in pairwise(dims):
+        layers.append(nn.Linear(dim_a, dim_b, init_method="Xavier"))
+        layers.append(nn.Sigmoid())
+
+    f = nn.Sequential(*layers)
+    i = data.draw(some_multi_index(batch_size, dims[0]), label="Input multi-index")
+    j = data.draw(some_multi_index(batch_size, dims[-1]), label="Output multi-index")
+    x = data.draw(some_tensor(batch_size, dims[0]), label="Input tensor")
+
+    grad_bp = compute_grad_x_backprop(f, x, i, j)
+    grad_fd = compute_grad_x_finite_diff(f, x, i, j)
+
+    logging.info(
+        "Sequential ∂Yj/∂Xi , %+12.6f , %+12.6f , %.6f",
+        grad_bp,
+        grad_fd,
+        abs(grad_bp - grad_fd),
+    )
+
+    assert np.isclose(grad_bp, grad_fd)
