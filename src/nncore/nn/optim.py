@@ -4,9 +4,7 @@ from typing import Optional
 from abc import abstractmethod, ABC
 
 import numpy as np
-
 from numpy.typing import NDArray
-from nncore.utils import zeros
 
 
 class Optimizer(ABC):
@@ -44,7 +42,7 @@ class SGD(Optimizer):
         self.weight_limit: Optional[float] = weight_limit
 
         self.parameters: list[NDArray] = parameters
-        self.velocities: list[NDArray] = [zeros(*param.shape) for param in self.parameters]
+        self.velocities: list[NDArray] = [np.zeros(param.shape, param.dtype) for param in self.parameters]
 
     def apply(self, gradients: list[NDArray]):
         for p, v_p, grad_p in zip(self.parameters, self.velocities, gradients):
@@ -94,8 +92,8 @@ class Adam(Optimizer):
         self.t: int = 0
 
         self.parameters: list[NDArray] = parameters
-        self.means: list[NDArray] = [zeros(*param.shape) for param in self.parameters]
-        self.variances: list[NDArray] = [zeros(*param.shape) for param in self.parameters]
+        self.means: list[NDArray] = [np.zeros(param.shape, param.dtype) for param in self.parameters]
+        self.variances: list[NDArray] = [np.zeros(param.shape, param.dtype) for param in self.parameters]
 
     def apply(self, gradients: list[NDArray]):
         # ----------------
