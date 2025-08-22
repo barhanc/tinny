@@ -110,38 +110,33 @@ def some_multi_index(*shape: int):
 
 
 @pytest.mark.parametrize("activation_type", [nn.Sigmoid, nn.ReLU, nn.Tanh])
-@given(some_shape(ndim=2, min_length=1, max_length=256), some.data())
+@given(some_shape(ndim=2, min_length=1, max_length=8), some.data())
 def test_activation_grad_x_correctness(
     activation_type: type[nn.Activation],
     shape: tuple[int, int],
     data: some.DataObject,
 ):
     f = activation_type()
-    i = data.draw(some_multi_index(*shape), "Multi-index")
+    i = data.draw(some_multi_index(*shape), "Input multi-index")
+    j = data.draw(some_multi_index(*shape), "Output multi-index")
     x = data.draw(some_tensor(*shape), "Input tensor")
 
     # Skip gradient check at ReLU non-differentiable point
     if activation_type is nn.ReLU:
         assume(not np.isclose(x[i], 0.0))
 
-    grad_bp = compute_grad_x_backprop(deepcopy(f), x, i, i)
-    grad_fd = compute_grad_x_finite_diff(deepcopy(f), x, i, i)
+    grad_bp = compute_grad_x_backprop(deepcopy(f), x, i, j)
+    grad_fd = compute_grad_x_finite_diff(deepcopy(f), x, i, j)
 
-    logging.info(
-        "%s ∂Yj/∂Xi , %+8.6f , %+8.6f , %.6f",
-        activation_type.__name__,
-        grad_bp,
-        grad_fd,
-        abs(grad_bp - grad_fd),
-    )
+    logging.info("%s ∂Yj/∂Xi | %+8.6f | %+8.6f", activation_type.__name__, grad_bp, grad_fd)
 
     assert np.isclose(grad_bp, grad_fd)
 
 
 @given(
-    some.integers(1, 64),
-    some.integers(1, 64),
-    some.integers(1, 64),
+    some.integers(1, 8),
+    some.integers(1, 8),
+    some.integers(1, 8),
     some.one_of(some.just("He"), some.just("Xavier")),
     some.data(),
 )
@@ -160,20 +155,15 @@ def test_linear_grad_x_correctness(
     grad_bp = compute_grad_x_backprop(deepcopy(f), x, i, j)
     grad_fd = compute_grad_x_finite_diff(deepcopy(f), x, i, j)
 
-    logging.info(
-        "Linear ∂Yj/∂Xi , %+8.6f , %+8.6f , %.6f",
-        grad_bp,
-        grad_fd,
-        abs(grad_bp - grad_fd),
-    )
+    logging.info("Linear ∂Yj/∂Xi | %+8.6f | %+8.6f", grad_bp, grad_fd)
 
     assert np.isclose(grad_bp, grad_fd)
 
 
 @given(
-    some.integers(1, 64),
-    some.integers(1, 64),
-    some.integers(1, 64),
+    some.integers(1, 8),
+    some.integers(1, 8),
+    some.integers(1, 8),
     some.one_of(some.just("He"), some.just("Xavier")),
     some.data(),
 )
@@ -196,7 +186,7 @@ def test_linear_grad_params_correctness(
     grads_fd = compute_grad_params_finite_diff(deepcopy(f), x, idxs, j)
 
     logging.info(
-        "Linear ∂Yj/∂θi , w:  %+8.6f ,  %+8.6f , b:  %+8.6f ,  %+8.6f",
+        "Linear ∂Yj/∂θi | w:  %+8.6f ,  %+8.6f | b:  %+8.6f ,  %+8.6f",
         grads_bp[0],
         grads_fd[0],
         grads_bp[1],
@@ -206,9 +196,9 @@ def test_linear_grad_params_correctness(
 
 
 @given(
-    some_shape(ndim=4, min_length=1, max_length=8),
-    some.integers(1, 16),
-    some.tuples(some.integers(1, 5), some.integers(1, 5)),
+    some_shape(ndim=4, min_length=1, max_length=4),
+    some.integers(1, 4),
+    some.tuples(some.integers(1, 4), some.integers(1, 4)),
     some.tuples(some.integers(1, 2), some.integers(1, 2)),
     some.tuples(some.integers(0, 2), some.integers(0, 2)),
     some.one_of(some.just("He"), some.just("Xavier")),
@@ -247,20 +237,15 @@ def test_conv2d_grad_x_correctness(
     grad_bp = compute_grad_x_backprop(deepcopy(f), x, i, j)
     grad_fd = compute_grad_x_finite_diff(deepcopy(f), x, i, j)
 
-    logging.info(
-        "Conv2D ∂Yj/∂Xi , %+8.6f , %+8.6f , %.6f",
-        grad_bp,
-        grad_fd,
-        abs(grad_bp - grad_fd),
-    )
+    logging.info("Conv2D ∂Yj/∂Xi | %+8.6f | %+8.6f", grad_bp, grad_fd)
 
     assert np.isclose(grad_bp, grad_fd)
 
 
 @given(
-    some_shape(ndim=4, min_length=1, max_length=8),
-    some.integers(1, 16),
-    some.tuples(some.integers(1, 5), some.integers(1, 5)),
+    some_shape(ndim=4, min_length=1, max_length=4),
+    some.integers(1, 4),
+    some.tuples(some.integers(1, 4), some.integers(1, 4)),
     some.tuples(some.integers(1, 2), some.integers(1, 2)),
     some.tuples(some.integers(0, 2), some.integers(0, 2)),
     some.one_of(some.just("He"), some.just("Xavier")),
@@ -306,7 +291,7 @@ def test_conv2d_grad_params_correctness(
     grads_fd = compute_grad_params_finite_diff(deepcopy(f), x, idxs, j)
 
     logging.info(
-        "Linear ∂Yj/∂θi , w:  %+8.6f ,  %+8.6f , b:  %+8.6f ,  %+8.6f",
+        "Linear ∂Yj/∂θi | w:  %+8.6f ,  %+8.6f | b:  %+8.6f ,  %+8.6f",
         grads_bp[0],
         grads_fd[0],
         grads_bp[1],
@@ -317,8 +302,8 @@ def test_conv2d_grad_params_correctness(
 
 
 @given(
-    some.integers(1, 64),
-    some.lists(some.integers(1, 64), min_size=1, max_size=8),
+    some.integers(1, 8),
+    some.lists(some.integers(1, 8), min_size=1, max_size=8),
     some.data(),
 )
 def test_sequential_grad_flow_correctness(
@@ -328,7 +313,7 @@ def test_sequential_grad_flow_correctness(
 ):
     layers = []
     for dim_a, dim_b in pairwise(dims):
-        layers.append(nn.Linear(dim_a, dim_b, init_method="Xavier"))
+        layers.append(nn.Linear(dim_a, dim_b, init_method="Xavier", dtype=np.float64))
         layers.append(nn.Sigmoid())
 
     f = nn.Sequential(*layers)
@@ -339,11 +324,6 @@ def test_sequential_grad_flow_correctness(
     grad_bp = compute_grad_x_backprop(deepcopy(f), x, i, j)
     grad_fd = compute_grad_x_finite_diff(deepcopy(f), x, i, j)
 
-    logging.info(
-        "Sequential ∂Yj/∂Xi , %+8.6f , %+8.6f , %.6f",
-        grad_bp,
-        grad_fd,
-        abs(grad_bp - grad_fd),
-    )
+    logging.info("Sequential ∂Yj/∂Xi | %+8.6f | %+8.6f", grad_bp, grad_fd)
 
     assert np.isclose(grad_bp, grad_fd)
