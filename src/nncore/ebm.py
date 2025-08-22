@@ -6,7 +6,7 @@ from typing import Optional, Literal, Callable
 import numpy as np
 
 from tqdm import trange
-from numpy.typing import NDArray
+from numpy.typing import NDArray, DTypeLike
 from nncore.utils import zeros, limit_weights
 
 
@@ -24,6 +24,7 @@ class RBM:
         l2_penalty: Optional[float],
         weight_limit: Optional[float],
         init_method: Literal["Xavier", "He"],
+        dtype: DTypeLike = np.float32,
     ):
         self.vsize: int = vsize
         self.hsize: int = hsize
@@ -38,6 +39,7 @@ class RBM:
         self.weight_limit: Optional[float] = weight_limit
 
         self.init_method: Literal["Xavier", "He"] = init_method
+        self.dtype: DTypeLike = dtype
         self.reset()
 
     def reset(self):
@@ -47,31 +49,31 @@ class RBM:
         match self.init_method:
             case "Xavier":
                 scale = np.sqrt(6 / (self.vsize + self.hsize))
-                self.w = np.random.uniform(-scale, +scale, size=(self.vsize, self.hsize)).astype(np.float32)
+                self.w = np.random.uniform(-scale, +scale, size=(self.vsize, self.hsize)).astype(self.dtype)
             case "He":
                 scale = np.sqrt(4 / (self.vsize + self.hsize))
-                self.w = np.random.normal(0, scale, size=(self.vsize, self.hsize)).astype(np.float32)
+                self.w = np.random.normal(0, scale, size=(self.vsize, self.hsize)).astype(self.dtype)
             case _:
                 raise ValueError(f"Unrecognised {self.init_method=}")
 
         # ---------------------
         # Biases initialization
         # ---------------------
-        self.b = zeros(self.vsize)
-        self.c = zeros(self.hsize)
+        self.b = zeros(self.vsize, dtype=self.dtype)
+        self.c = zeros(self.hsize, dtype=self.dtype)
 
         # -----------------------
         # Momentum initialization
         # -----------------------
-        self.m_w = zeros(self.vsize, self.hsize)
-        self.m_b = zeros(self.vsize)
-        self.m_c = zeros(self.hsize)
+        self.m_w = zeros(self.vsize, self.hsize, dtype=self.dtype)
+        self.m_b = zeros(self.vsize, dtype=self.dtype)
+        self.m_c = zeros(self.hsize, dtype=self.dtype)
 
         # -------------------------------
         # Persistent chain initialization
         # -------------------------------
         if self.pc_size:
-            self.pc = zeros(self.pc_size, self.hsize)
+            self.pc = zeros(self.pc_size, self.hsize, dtype=self.dtype)
 
     def probas_v(self, h: NDArray, sample: bool) -> NDArray:
         return self.v_activation(self.b + h @ self.w.T, sample)
