@@ -1,3 +1,3 @@
-[ ] Hopfield network implementation and experiments
-[ ] Attention Layer and Transformer Implementation
-[ ] Add Github Actions for testing and generating the docs pdf
+- [ ] Hopfield network implementation and experiments
+- [ ] Attention Layer and Transformer Implementation
+- [ ] Add Github Actions for testing and generating the docs pdf
