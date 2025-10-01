@@ -1,3 +1,4 @@
 - [ ] Hopfield network implementation and experiments
 - [ ] Attention Layer and Transformer Implementation
+- [ ] Mechanistic Interpretability
 - [ ] Add Github Actions for testing and generating the docs pdf
