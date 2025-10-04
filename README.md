@@ -23,7 +23,7 @@ This repository also serves as a personal sandbox for implementing and experimen
 models, whether in pure NumPy, PyTorch, or alternative frameworks like tinygrad. As such, you can
 expect new and varied commits over time. See the [notebooks](/notebooks/) directory for examples.
 
-You can also find accompanying theory notes and derivations [here](docs/draft_v_0_1.pdf).
+You can also find accompanying theory notes and derivations [here](https://barhanc.github.io/notes/machine-learning/deep/dl.pdf).
 
 ---
 
