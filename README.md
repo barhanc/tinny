@@ -1,4 +1,4 @@
-# nn-core
+# tinny
 
 This is a small educational neural network library implemented using NumPy only, which originated
 from my experiments during the Neural Networks and Deep Learning course at AGH University (see the
@@ -27,13 +27,6 @@ You can also find accompanying theory notes and derivations [here](https://barha
 
 ---
 
-The current recommended way to install this package is from source
-```bash
-git clone https://github.com/barhanc/nn-core.git
-cd nn-core
-python3 -m venv venv
-source venv/bin/activate
-pip install -e .
-```
+
 
 ---

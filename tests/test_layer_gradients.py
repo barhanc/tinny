@@ -14,7 +14,7 @@ from numpy.typing import NDArray, DTypeLike
 from hypothesis import given, assume
 from hypothesis import strategies as some
 
-from nncore import nn
+from tinny import nn
 
 # #########################################################
 # Helper functions

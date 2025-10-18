@@ -1,33 +1,26 @@
-[build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
-
 [project]
-name = "nncore"
-version = "0.0.0"
-authors = [
-    {name = "Bartosz Hanc", email = "bhanc@student.agh.edu.pl"},
-]
-description = "Toy neural network library implemented from scratch using NumPy"
+name = "tinny"
+version = "0.1.0"
+description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.10"
-license = "MIT"
-license-files = ["LICEN[CS]E*"]
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "Operating System :: OS Independent",
+authors = [
+    { name = "Bartosz Hanc", email = "bartosz.hanc02@gmail.com" }
 ]
+requires-python = ">=3.13"
 dependencies = [
-    "numpy",
-    "tqdm",
+    "numpy>=2.3.4",
+    "tqdm>=4.67.1",
 ]
 
-[project.optional-dependencies]
+[project.scripts]
+tinny = "tinny:main"
+
+[build-system]
+requires = ["uv_build>=0.8.23,<0.9.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
 dev = [
-    "pytest", 
-    "hypothesis",
+    "hypothesis>=6.142.1",
+    "pytest>=8.4.2",
 ]
-
-[project.urls]
-Homepage = "https://github.com/barhanc/nn-core"
-Issues = "https://github.com/barhanc/nn-core/issues"

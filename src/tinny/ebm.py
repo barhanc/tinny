@@ -7,7 +7,7 @@ import numpy as np
 
 from tqdm import trange
 from numpy.typing import NDArray, DTypeLike
-from nncore.utils import zeros, limit_weights
+from tinny.utils import zeros, limit_weights
 
 
 class RBM:
