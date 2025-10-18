@@ -9,6 +9,7 @@ type FloatType = np.float32 | np.float64
 type BoolType = np.bool_
 type IntpType = np.intp
 
+xp = np
 
 # NOTE: This is a hack to allow GPU execution of NumPy code
 # fmt:off
