@@ -1,4 +1,5 @@
 # pylint: disable=missing-function-docstring, missing-class-docstring, missing-module-docstring
+# pylint: disable=invalid-name
 
 from itertools import pairwise
 from typing import Optional, Literal, Callable
@@ -7,7 +8,7 @@ import numpy as np
 
 from tqdm import trange
 from numpy.typing import NDArray, DTypeLike
-from tinny.utils import zeros, limit_weights
+from tinny.utils import limit_weights
 
 
 class RBM:
@@ -43,9 +44,7 @@ class RBM:
         self.reset()
 
     def reset(self):
-        # ----------------------
         # Weights initialization
-        # ----------------------
         match self.init_method:
             case "Xavier":
                 scale = np.sqrt(6 / (self.vsize + self.hsize))
@@ -56,24 +55,18 @@ class RBM:
             case _:
                 raise ValueError(f"Unrecognised {self.init_method=}")
 
-        # ---------------------
         # Biases initialization
-        # ---------------------
-        self.b = zeros(self.vsize, dtype=self.dtype)
-        self.c = zeros(self.hsize, dtype=self.dtype)
+        self.b = np.zeros(self.vsize, dtype=self.dtype)
+        self.c = np.zeros(self.hsize, dtype=self.dtype)
 
-        # -----------------------
         # Momentum initialization
-        # -----------------------
-        self.m_w = zeros(self.vsize, self.hsize, dtype=self.dtype)
-        self.m_b = zeros(self.vsize, dtype=self.dtype)
-        self.m_c = zeros(self.hsize, dtype=self.dtype)
+        self.m_w = np.zeros((self.vsize, self.hsize), dtype=self.dtype)
+        self.m_b = np.zeros(self.vsize, dtype=self.dtype)
+        self.m_c = np.zeros(self.hsize, dtype=self.dtype)
 
-        # -------------------------------
         # Persistent chain initialization
-        # -------------------------------
         if self.pc_size:
-            self.pc = zeros(self.pc_size, self.hsize, dtype=self.dtype)
+            self.pc = np.zeros((self.pc_size, self.hsize), dtype=self.dtype)
 
     def probas_v(self, h: NDArray, sample: bool) -> NDArray:
         return self.v_activation(self.b + h @ self.w.T, sample)
@@ -82,9 +75,7 @@ class RBM:
         return self.h_activation(self.c + v @ self.w, sample)
 
     def sample(self, v: NDArray, steps: int, verbose: bool = False) -> NDArray:
-        # ----------------------
         # Perform Gibbs sampling
-        # ----------------------
         for k in trange(steps, desc="Sampling", disable=not verbose):
             h = self.probas_h(v, sample=True)
             v = self.probas_v(h, sample=k < steps - 1)
@@ -127,22 +118,18 @@ def cdk(rbm: RBM, minibatch: NDArray, k: int = 1):
     batch_size = minibatch.shape[0]
     v = minibatch
 
-    # #################
-    # Compute gradients
-    # #################
+    # -------------------------
+    # --- Compute gradients ---
+    # -------------------------
 
-    # --------------
-    # Positive phase
-    # --------------
-    σ = rbm.probas_h(v, sample=False)  # Math notation, so pylint: disable=non-ascii-name
+    # --- Positive phase ---
+    σ = rbm.probas_h(v, sample=False)
 
     grad_w = -1 / batch_size * (v.T @ σ)
     grad_b = -1 / batch_size * (v.sum(axis=0))
     grad_c = -1 / batch_size * (σ.sum(axis=0))
 
-    # --------------
-    # Negative phase
-    # --------------
+    # --- Negative phase ---
 
     # Perform Gibbs sampling
     h = rbm.probas_h(v, sample=True)
@@ -152,15 +139,15 @@ def cdk(rbm: RBM, minibatch: NDArray, k: int = 1):
         v = rbm.probas_v(h, sample=True)
 
     # Negative gradient estimation
-    σ = rbm.probas_h(v, sample=False)  # Math notation, so pylint: disable=non-ascii-name
+    σ = rbm.probas_h(v, sample=False)
 
     grad_w += 1 / batch_size * (v.T @ σ)
     grad_b += 1 / batch_size * (v.sum(axis=0))
     grad_c += 1 / batch_size * (σ.sum(axis=0))
 
-    # #############
-    # Update params
-    # #############
+    # ---------------------
+    # --- Update params ---
+    # ---------------------
 
     if rbm.l1_penalty:
         grad_w += rbm.l1_penalty * np.sign(rbm.w)
@@ -185,22 +172,18 @@ def pcd(rbm: RBM, minibatch: NDArray, k: int = 1):
     batch_size = minibatch.shape[0]
     v = minibatch
 
-    # #################
-    # Compute gradients
-    # #################
+    # -------------------------
+    # --- Compute gradients ---
+    # -------------------------
 
-    # --------------
-    # Positive phase
-    # --------------
-    σ = rbm.probas_h(v, sample=False)  # Math notation, so pylint: disable=non-ascii-name
+    # --- Positive phase ---
+    σ = rbm.probas_h(v, sample=False)
 
     grad_w = -1 / batch_size * (v.T @ σ)
     grad_b = -1 / batch_size * (v.sum(axis=0))
     grad_c = -1 / batch_size * (σ.sum(axis=0))
 
-    # --------------
-    # Negative phase
-    # --------------
+    # --- Negative phase ---
 
     # Perform Gibbs sampling starting from persistent chain
     h = rbm.pc
@@ -210,7 +193,7 @@ def pcd(rbm: RBM, minibatch: NDArray, k: int = 1):
         v = rbm.probas_v(h, sample=True)
 
     # Negative gradient estimation
-    σ = rbm.probas_h(v, sample=False)  # Math notation, so pylint: disable=non-ascii-name
+    σ = rbm.probas_h(v, sample=False)
 
     grad_w += 1 / rbm.pc_size * (v.T @ σ)
     grad_b += 1 / rbm.pc_size * (v.sum(axis=0))
@@ -219,9 +202,9 @@ def pcd(rbm: RBM, minibatch: NDArray, k: int = 1):
     # Update persistent chain
     rbm.pc = rbm.probas_h(v, sample=True)
 
-    # #############
-    # Update params
-    # #############
+    # ---------------------
+    # --- Update params ---
+    # ---------------------
 
     if rbm.l1_penalty:
         grad_w += rbm.l1_penalty * np.sign(rbm.w)
