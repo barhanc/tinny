@@ -5,8 +5,8 @@ from typing import Optional, Literal, Callable
 
 from tqdm import trange
 
-from tinny import xp
-from tinny import NDArray, FloatType, DTypeLike
+from tinny._core import xp
+from tinny._core import NDArray, FloatType, DTypeLike
 
 
 def _limit_weights(w: NDArray[FloatType], limit: float) -> NDArray[FloatType]:

@@ -274,6 +274,18 @@ wheels = [
 ]
 
 [[package]]
+name = "mnists"
+version = "0.4.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/16/57/76118791bba51bae23d7baec423c158b58af4bff22b53bb49fbb2f3a30fc/mnists-0.4.1.tar.gz", hash = "sha256:a0398c8409409f4cc3a13b95fcfea89bb1ec761eacb44e668b5c4f4358f082fb", size = 11873, upload-time = "2024-07-06T20:42:29.033Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a0/9f/8d4f954d104a7810ef0a43614124a0daa95d7ed9e817e480cd9d2334c1ea/mnists-0.4.1-py3-none-any.whl", hash = "sha256:d23557814da8349f0a022050d7c6cb77d236a942a269580de353c51a105e475a", size = 12001, upload-time = "2024-07-06T20:41:46.428Z" },
+]
+
+[[package]]
 name = "numpy"
 version = "2.3.4"
 source = { registry = "https://pypi.org/simple" }
@@ -476,8 +488,9 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
-cuda = [
+experimental = [
     { name = "cupy-cuda12x" },
+    { name = "mnists" },
 ]
 
 [package.dev-dependencies]
@@ -488,12 +501,13 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "cupy-cuda12x", marker = "extra == 'cuda'", specifier = ">=13.6.0" },
+    { name = "cupy-cuda12x", marker = "extra == 'experimental'", specifier = ">=13.6.0" },
     { name = "matplotlib", specifier = ">=3.10.7" },
+    { name = "mnists", marker = "extra == 'experimental'", specifier = ">=0.4.1" },
     { name = "numpy", specifier = ">=2.3.4" },
     { name = "tqdm", specifier = ">=4.67.1" },
 ]
-provides-extras = ["cuda"]
+provides-extras = ["experimental"]
 
 [package.metadata.requires-dev]
 dev = [

@@ -1,7 +1,7 @@
 # pylint: disable=missing-function-docstring, missing-class-docstring, missing-module-docstring
 # pylint: disable=invalid-name
-from tinny import xp
-from tinny import NDArray, FloatType, IntpType, DTypeLike
+from tinny._core import xp
+from tinny._core import NDArray, FloatType, IntpType, DTypeLike
 
 
 def chunks(arr: NDArray, size: int):

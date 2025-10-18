@@ -4,8 +4,8 @@ from itertools import chain
 from abc import abstractmethod, ABC
 from typing import Optional, Literal
 
-from tinny import xp
-from tinny import NDArray, FloatType, BoolType, IntpType, DTypeLike
+from tinny._core import xp
+from tinny._core import NDArray, FloatType, BoolType, IntpType, DTypeLike
 
 
 class Layer(ABC):

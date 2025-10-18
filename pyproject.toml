@@ -14,9 +14,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-cuda = [
+experimental = [
     "cupy-cuda12x>=13.6.0",
+    "mnists>=0.4.1",
 ]
+
 
 [build-system]
 requires = ["uv_build>=0.8.23,<0.9.0"]
