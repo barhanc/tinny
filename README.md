@@ -25,8 +25,14 @@ expect new and varied commits over time. See the [notebooks](/notebooks/) direct
 
 You can also find accompanying theory notes and derivations [here](https://barhanc.github.io/notes/machine-learning/deep/dl.pdf).
 
----
 
+## Installation
+
+```bash
+git clone https://github.com/barhanc/tinny.git
+cd tinny
+uv sync
+```
 
 
 ---
