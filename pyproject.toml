@@ -1,7 +1,7 @@
 [project]
 name = "tinny"
 version = "0.1.0"
-description = "Add your description here"
+description = "A minimal neural network library in NumPy"
 readme = "README.md"
 authors = [
     { name = "Bartosz Hanc", email = "bartosz.hanc02@gmail.com" }
@@ -12,8 +12,10 @@ dependencies = [
     "tqdm>=4.67.1",
 ]
 
-[project.scripts]
-tinny = "tinny:main"
+[project.optional-dependencies]
+cuda = [
+    "cupy-cuda12x>=13.6.0",
+]
 
 [build-system]
 requires = ["uv_build>=0.8.23,<0.9.0"]
