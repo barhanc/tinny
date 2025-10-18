@@ -1,30 +1,11 @@
 # pylint: disable=missing-function-docstring, missing-class-docstring, missing-module-docstring
 # pylint: disable=invalid-name
-
-import os
-
 from itertools import chain
 from abc import abstractmethod, ABC
 from typing import Optional, Literal
 
-import numpy as np
-
-from numpy.typing import NDArray, DTypeLike
-
-type FloatType = np.float32 | np.float64
-type BoolType = np.bool_
-type IntpType = np.intp
-
-# NOTE: This is a hack to allow GPU execution of NumPy code
-# fmt:off
-xp = np
-if os.environ.get("GPU") == "1":
-    try:
-        import cupy as cp
-        xp = cp
-    except ImportError:
-        print("Cupy is not available!")
-# fmt:on
+from tinny import xp
+from tinny import NDArray, FloatType, BoolType, IntpType, DTypeLike
 
 
 class Layer(ABC):
@@ -536,14 +517,14 @@ class Conv2D(Layer):
 
 class Optimizer(ABC):
     # References to the parameters of the model
-    parameters: list[NDArray]
+    parameters: list[NDArray[FloatType]]
 
     @abstractmethod
-    def __init__(self, parameters: list[NDArray], *args, **kwargs):
+    def __init__(self, parameters: list[NDArray[FloatType]], *args, **kwargs):
         raise NotImplementedError
 
     @abstractmethod
-    def apply(self, gradients: list[NDArray]) -> None:
+    def apply(self, gradients: list[NDArray[FloatType]]) -> None:
         """
         Given the list of gradfients ∂Loss/∂θ of the loss function w.r.t. the parameters in the
         same order as in the `self.parameters` list, apply the gradients and advance the
@@ -555,7 +536,7 @@ class Optimizer(ABC):
 class SGD(Optimizer):
     def __init__(
         self,
-        parameters: list[NDArray],
+        parameters: list[NDArray[FloatType]],
         lr: float,
         momentum: float,
         nesterov: bool = False,
@@ -568,10 +549,10 @@ class SGD(Optimizer):
         self.l2_penalty: Optional[float] = l2_penalty
         self.weight_limit: Optional[float] = weight_limit
 
-        self.parameters: list[NDArray] = parameters
-        self.velocities: list[NDArray] = [xp.zeros(param.shape, param.dtype) for param in self.parameters]
+        self.parameters: list[NDArray[FloatType]] = parameters
+        self.velocities: list[NDArray[FloatType]] = [xp.zeros(param.shape, param.dtype) for param in self.parameters]
 
-    def apply(self, gradients: list[NDArray]):
+    def apply(self, gradients: list[NDArray[FloatType]]):
         for p, v_p, grad_p in zip(self.parameters, self.velocities, gradients):
             # Apply L2 regularization
             if self.l2_penalty:
@@ -597,7 +578,7 @@ class SGD(Optimizer):
 class Adam(Optimizer):
     def __init__(
         self,
-        parameters: list[NDArray],
+        parameters: list[NDArray[FloatType]],
         lr: float,
         betas: tuple[float, float] = (0.9, 0.999),
         eps: float = 1e-8,
@@ -608,11 +589,11 @@ class Adam(Optimizer):
         self.eps: float = eps
         self.t: int = 0
 
-        self.parameters: list[NDArray] = parameters
-        self.means: list[NDArray] = [xp.zeros(param.shape, param.dtype) for param in self.parameters]
-        self.variances: list[NDArray] = [xp.zeros(param.shape, param.dtype) for param in self.parameters]
+        self.parameters: list[NDArray[FloatType]] = parameters
+        self.means: list[NDArray[FloatType]] = [xp.zeros(param.shape, param.dtype) for param in self.parameters]
+        self.variances: list[NDArray[FloatType]] = [xp.zeros(param.shape, param.dtype) for param in self.parameters]
 
-    def apply(self, gradients: list[NDArray]):
+    def apply(self, gradients: list[NDArray[FloatType]]):
         # Update time step
         self.t += 1
 

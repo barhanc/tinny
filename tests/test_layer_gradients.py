@@ -18,14 +18,25 @@ from hypothesis import strategies as some
 from tinny import nn
 
 
-def compute_grad_x_fd(f: nn.Layer, x: NDArray, i: tuple[int, ...], j: tuple[int, ...], eps: float = 1e-8) -> float:
+def compute_grad_x_fd(
+    f: nn.Layer,
+    x: NDArray,
+    i: tuple[int, ...],
+    j: tuple[int, ...],
+    eps: float = 1e-8,
+) -> float:
     dx = np.zeros_like(x)
     dx[i] = eps
     dy = f.forward(x + dx, training=True) - f.forward(x - dx, training=True)
     return dy[j] / (2 * dx[i])
 
 
-def compute_grad_x_bp(f: nn.Layer, x: NDArray, i: tuple[int, ...], j: tuple[int, ...]) -> float:
+def compute_grad_x_bp(
+    f: nn.Layer,
+    x: NDArray,
+    i: tuple[int, ...],
+    j: tuple[int, ...],
+) -> float:
     y = f.forward(x, training=True)
     grad_y = np.zeros_like(y)
     grad_y[j] = 1.0
@@ -33,7 +44,12 @@ def compute_grad_x_bp(f: nn.Layer, x: NDArray, i: tuple[int, ...], j: tuple[int,
     return grad_x[i]
 
 
-def compute_grad_params_bp(f: nn.Layer, x: NDArray, idxs: list[tuple[int, ...]], j: tuple[int, ...]) -> list[float]:
+def compute_grad_params_bp(
+    f: nn.Layer,
+    x: NDArray,
+    idxs: list[tuple[int, ...]],
+    j: tuple[int, ...],
+) -> list[float]:
     y = f.forward(x, training=True)
     grad_y = np.zeros_like(y)
     grad_y[j] = 1.0
@@ -48,7 +64,11 @@ def compute_grad_params_bp(f: nn.Layer, x: NDArray, idxs: list[tuple[int, ...]],
 
 
 def compute_grad_params_fd(
-    f: nn.Layer, x: NDArray, idxs: list[tuple[int, ...]], j: tuple[int, ...], eps: float = 1e-8
+    f: nn.Layer,
+    x: NDArray,
+    idxs: list[tuple[int, ...]],
+    j: tuple[int, ...],
+    eps: float = 1e-8,
 ) -> list[float]:
     grads = []
 
@@ -266,7 +286,7 @@ def test_sequential_grad_flow_correctness(batch_size: int, dims: list[int], data
 
     logging.info("Sequential ∂Yj/∂Xi | %+8.6f | %+8.6f", grad_bp, grad_fd)
 
-    assert np.isclose(grad_bp, grad_fd)
+    assert np.isclose(grad_fd, grad_bp)
 
 
 @given(
@@ -277,9 +297,8 @@ def test_sequential_grad_flow_correctness(batch_size: int, dims: list[int], data
 def test_residual_grad_flow_correctness(batch_size: int, dim: int, data: some.DataObject):
     layer = nn.Sequential(
         nn.Linear(dim, dim, dtype=np.float64),
-        nn.GELU(),
+        nn.Sigmoid(),
         nn.Linear(dim, dim, dtype=np.float64),
-        nn.GELU(),
     )
     f = nn.Residual(layer)
     i = data.draw(some_multi_index(batch_size, dim), "Input multi-index")

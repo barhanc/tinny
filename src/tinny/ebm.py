@@ -1,14 +1,20 @@
 # pylint: disable=missing-function-docstring, missing-class-docstring, missing-module-docstring
 # pylint: disable=invalid-name
-
 from itertools import pairwise
 from typing import Optional, Literal, Callable
 
-import numpy as np
-
 from tqdm import trange
-from numpy.typing import NDArray, DTypeLike
-from tinny.utils import limit_weights
+
+from tinny import xp
+from tinny import NDArray, FloatType, DTypeLike
+
+
+def _limit_weights(w: NDArray[FloatType], limit: float) -> NDArray[FloatType]:
+    if limit == 0:
+        return w
+    norm = xp.linalg.norm(w, ord=2, axis=0)
+    mask = norm > limit
+    return w * (mask * (limit / norm) + (~mask) * 1.0)
 
 
 class RBM:
@@ -17,21 +23,21 @@ class RBM:
         vsize: int,
         hsize: int,
         pc_size: Optional[int],
-        v_activation: Callable[[NDArray, bool], NDArray],
-        h_activation: Callable[[NDArray, bool], NDArray],
+        v_activation: Callable[[NDArray[FloatType], bool], NDArray[FloatType]],
+        h_activation: Callable[[NDArray[FloatType], bool], NDArray[FloatType]],
         lr: float,
         momentum: float,
         l1_penalty: Optional[float],
         l2_penalty: Optional[float],
         weight_limit: Optional[float],
         init_method: Literal["Xavier", "He"],
-        dtype: DTypeLike = np.float32,
+        dtype: DTypeLike = xp.float32,
     ):
         self.vsize: int = vsize
         self.hsize: int = hsize
         self.pc_size: Optional[int] = pc_size
-        self.v_activation: Callable[[NDArray, bool], NDArray] = v_activation
-        self.h_activation: Callable[[NDArray, bool], NDArray] = h_activation
+        self.v_activation: Callable[[NDArray[FloatType], bool], NDArray[FloatType]] = v_activation
+        self.h_activation: Callable[[NDArray[FloatType], bool], NDArray[FloatType]] = h_activation
 
         self.lr: float = lr
         self.momentum: float = momentum
@@ -47,34 +53,34 @@ class RBM:
         # Weights initialization
         match self.init_method:
             case "Xavier":
-                scale = np.sqrt(6 / (self.vsize + self.hsize))
-                self.w = np.random.uniform(-scale, +scale, size=(self.vsize, self.hsize)).astype(self.dtype)
+                scale = xp.sqrt(6 / (self.vsize + self.hsize))
+                self.w = xp.random.uniform(-scale, +scale, size=(self.vsize, self.hsize)).astype(self.dtype)
             case "He":
-                scale = np.sqrt(4 / (self.vsize + self.hsize))
-                self.w = np.random.normal(0, scale, size=(self.vsize, self.hsize)).astype(self.dtype)
+                scale = xp.sqrt(4 / (self.vsize + self.hsize))
+                self.w = xp.random.normal(0, scale, size=(self.vsize, self.hsize)).astype(self.dtype)
             case _:
                 raise ValueError(f"Unrecognised {self.init_method=}")
 
         # Biases initialization
-        self.b = np.zeros(self.vsize, dtype=self.dtype)
-        self.c = np.zeros(self.hsize, dtype=self.dtype)
+        self.b = xp.zeros(self.vsize, dtype=self.dtype)
+        self.c = xp.zeros(self.hsize, dtype=self.dtype)
 
         # Momentum initialization
-        self.m_w = np.zeros((self.vsize, self.hsize), dtype=self.dtype)
-        self.m_b = np.zeros(self.vsize, dtype=self.dtype)
-        self.m_c = np.zeros(self.hsize, dtype=self.dtype)
+        self.m_w = xp.zeros((self.vsize, self.hsize), dtype=self.dtype)
+        self.m_b = xp.zeros(self.vsize, dtype=self.dtype)
+        self.m_c = xp.zeros(self.hsize, dtype=self.dtype)
 
         # Persistent chain initialization
         if self.pc_size:
-            self.pc = np.zeros((self.pc_size, self.hsize), dtype=self.dtype)
+            self.pc = xp.zeros((self.pc_size, self.hsize), dtype=self.dtype)
 
-    def probas_v(self, h: NDArray, sample: bool) -> NDArray:
+    def probas_v(self, h: NDArray[FloatType], sample: bool) -> NDArray[FloatType]:
         return self.v_activation(self.b + h @ self.w.T, sample)
 
-    def probas_h(self, v: NDArray, sample: bool) -> NDArray:
+    def probas_h(self, v: NDArray[FloatType], sample: bool) -> NDArray[FloatType]:
         return self.h_activation(self.c + v @ self.w, sample)
 
-    def sample(self, v: NDArray, steps: int, verbose: bool = False) -> NDArray:
+    def sample(self, v: NDArray[FloatType], steps: int, verbose: bool = False) -> NDArray[FloatType]:
         # Perform Gibbs sampling
         for k in trange(steps, desc="Sampling", disable=not verbose):
             h = self.probas_h(v, sample=True)
@@ -94,19 +100,19 @@ class DBN:
         for rbm in self.layers:
             rbm.reset()
 
-    def propagate_up(self, v: NDArray, n_layers: int) -> NDArray:
+    def propagate_up(self, v: NDArray[FloatType], n_layers: int) -> NDArray[FloatType]:
         assert 0 <= n_layers < len(self.layers)
         for i in range(n_layers):
             v = self.layers[i].probas_h(v, sample=False)
         return v
 
-    def propagate_dn(self, h: NDArray, n_layers: int) -> NDArray:
+    def propagate_dn(self, h: NDArray[FloatType], n_layers: int) -> NDArray[FloatType]:
         assert 0 <= n_layers < len(self.layers)
         for i in reversed(range(n_layers)):
             h = self.layers[i].probas_v(h, sample=False)
         return h
 
-    def sample(self, v: NDArray, steps: int, verbose: bool = False) -> NDArray:
+    def sample(self, v: NDArray[FloatType], steps: int, verbose: bool = False) -> NDArray[FloatType]:
         i = len(self.layers) - 1
         v = self.propagate_up(v, i)
         h = self.layers[i].sample(v, steps, verbose)
@@ -114,7 +120,7 @@ class DBN:
         return v
 
 
-def cdk(rbm: RBM, minibatch: NDArray, k: int = 1):
+def cdk(rbm: RBM, minibatch: NDArray[FloatType], k: int = 1):
     batch_size = minibatch.shape[0]
     v = minibatch
 
@@ -150,7 +156,7 @@ def cdk(rbm: RBM, minibatch: NDArray, k: int = 1):
     # ---------------------
 
     if rbm.l1_penalty:
-        grad_w += rbm.l1_penalty * np.sign(rbm.w)
+        grad_w += rbm.l1_penalty * xp.sign(rbm.w)
 
     if rbm.l2_penalty:
         grad_w += rbm.l2_penalty * rbm.w
@@ -164,10 +170,10 @@ def cdk(rbm: RBM, minibatch: NDArray, k: int = 1):
     rbm.c += rbm.m_c
 
     if rbm.weight_limit:
-        rbm.w = limit_weights(rbm.w, rbm.weight_limit)
+        rbm.w = _limit_weights(rbm.w, rbm.weight_limit)
 
 
-def pcd(rbm: RBM, minibatch: NDArray, k: int = 1):
+def pcd(rbm: RBM, minibatch: NDArray[FloatType], k: int = 1):
     assert rbm.pc_size is not None
     batch_size = minibatch.shape[0]
     v = minibatch
@@ -207,7 +213,7 @@ def pcd(rbm: RBM, minibatch: NDArray, k: int = 1):
     # ---------------------
 
     if rbm.l1_penalty:
-        grad_w += rbm.l1_penalty * np.sign(rbm.w)
+        grad_w += rbm.l1_penalty * xp.sign(rbm.w)
 
     if rbm.l2_penalty:
         grad_w += rbm.l2_penalty * rbm.w
@@ -221,4 +227,4 @@ def pcd(rbm: RBM, minibatch: NDArray, k: int = 1):
     rbm.c += rbm.m_c
 
     if rbm.weight_limit:
-        rbm.w = limit_weights(rbm.w, rbm.weight_limit)
+        rbm.w = _limit_weights(rbm.w, rbm.weight_limit)
