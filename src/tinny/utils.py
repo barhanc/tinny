@@ -6,7 +6,7 @@ from tinny._core import NDArray, FloatType, IntpType, DTypeLike
 
 def chunks(arr: NDArray, size: int):
     for i in range(0, len(arr), size):
-        yield arr[i : i + size]
+        yield xp.array(arr[i : i + size])
 
 
 def onehot(y: NDArray[IntpType], dtype: DTypeLike = xp.float32) -> NDArray[FloatType]:
