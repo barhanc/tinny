@@ -1,4 +1,4 @@
-# tinny 🪶🧠
+# tinny
 
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org/)
@@ -13,7 +13,7 @@ A minimal, educational neural network and energy-based model library implemented
 
 ---
 
-## ⚡ Core Highlights
+## Core Highlights
 
 - **Pure NumPy Core**: Transparent matrix implementations of forward and backward passes with zero black-box dependencies.
 - **Energy-Based Models (EBMs)**: Complete implementations of Restricted Boltzmann Machines (**RBMs**) and Deep Belief Networks (**DBNs**), trained via Contrastive Divergence ($CD_k$) and Persistent Contrastive Divergence (**PCD**).
@@ -24,7 +24,7 @@ A minimal, educational neural network and energy-based model library implemented
 
 ---
 
-## 🚀 Quickstart
+## Quickstart
 
 Ensure you have [uv](https://docs.astral.sh/uv/) installed.
 
@@ -68,7 +68,7 @@ optimizer.step()
 
 ---
 
-## 🧪 Model Zoo & Notebook Experiments
+## Model Zoo & Notebook Experiments
 
 Explore complete, runnable implementations in the [`notebooks/`](./notebooks/) directory:
 
@@ -82,7 +82,7 @@ Explore complete, runnable implementations in the [`notebooks/`](./notebooks/) d
 
 ---
 
-## 🎓 Academic Coursework Solutions
+## Academic Coursework Solutions
 
 The [`notebooks/course/`](./notebooks/course/) folder contains comprehensive solutions to the **Neural Networks and Deep Learning** course at AGH University (Labs 01 through 13), accompanied by personal commentary, mathematical notes, and critiques:
 
@@ -93,7 +93,7 @@ The [`notebooks/course/`](./notebooks/course/) folder contains comprehensive sol
 
 ---
 
-## 🛠️ Running Tests
+## Running Tests
 
 Validate analytical layer gradients against numerical finite-difference approximations:
 
