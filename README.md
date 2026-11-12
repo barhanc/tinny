@@ -3,14 +3,10 @@
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org/)
 [![NumPy](https://img.shields.io/badge/NumPy-2.0+-013243.svg?style=flat&logo=numpy&logoColor=white)](https://numpy.org/)
-[![Theory Notes](https://img.shields.io/badge/Theory_Notes-barhanc.github.io-8A2BE2.svg?style=flat)](https://barhanc.github.io/notes)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-
 A minimal, educational neural network and energy-based model library implemented from scratch in pure **NumPy**.
 
 `tinny` was created to demystify deep learning internals: no opaque autograd magic, no heavy framework bloat — just explicit mathematical operations, vectorized tensor calculus, and property-tested analytical gradient backpropagation. See the [`notebooks/`](./notebooks/) directory for experiment implementations (including MLPs, CNNs, Autoencoders, GANs, and DBNs) along with solutions and commentary for course assignments.
-
----
 
 ## Core Highlights
 
@@ -20,8 +16,6 @@ A minimal, educational neural network and energy-based model library implemented
 - **Comprehensive Layer Suite**: Dense (Linear), 2D Convolution (`Conv2D` with vectorized im2col), `MaxPool2D`, `Flatten`, `Dropout`, and `BatchNorm`.
 - **Rigorously Tested Gradients**: Analytical gradients are validated against numerical finite differences via property-based testing with **Hypothesis** and **pytest**.
 - **Accompanying Theory Notes**: Mathematical derivations and conceptual notes available at [barhanc.github.io/notes](https://barhanc.github.io/notes).
-
----
 
 ## Quickstart
 
