@@ -37,25 +37,27 @@ uv sync
 ```python
 import numpy as np
 from tinny import nn
+from tinny.utils import softmax, chunks
 
 # Define a Multi-Layer Perceptron
 model = nn.Sequential(
-    nn.Linear(784, 128),
+    nn.Linear(vsize=784, hsize=128),
     nn.ReLU(),
-    nn.Dropout(0.2),
-    nn.Linear(128, 10),
-    nn.Softmax(),
+    nn.Dropout(p=0.2),
+    nn.Linear(vsize=128, hsize=10),
 )
 
-# Forward pass
-X_batch = np.random.randn(32, 784)
-predictions = model.forward(X_batch)
-
-# Backward pass with cross-entropy gradient
-grad_output = predictions - y_onehot
-model.backward(grad_output)
-
-# Update parameters via optimizer
 optimizer = nn.Adam(model.parameters(), lr=1e-3)
-optimizer.step()
+
+# Training step across mini-batches
+for X_batch, y_batch in zip(chunks(X_train, 128), chunks(y_train, 128)):
+    # Forward pass
+    logits = model.forward(X_batch, training=True)
+
+    # Compute cross-entropy loss gradient
+    grad_y = (softmax(logits) - y_batch) / len(X_batch)
+
+    # Backward pass & parameter update
+    model.backward(grad_y)
+    optimizer.apply(model.gradients())
 ```
