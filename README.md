@@ -4,6 +4,7 @@
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org/)
 [![NumPy](https://img.shields.io/badge/NumPy-2.0+-013243.svg?style=flat&logo=numpy&logoColor=white)](https://numpy.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 A minimal, educational neural network and energy-based model library implemented from scratch in pure **NumPy**.
 
 `tinny` was created to demystify deep learning internals: no opaque autograd magic, no heavy framework bloat — just explicit mathematical operations, vectorized tensor calculus, and property-tested analytical gradient backpropagation. See the [`notebooks/`](./notebooks/) directory for experiment implementations (including MLPs, CNNs, Autoencoders, GANs, and DBNs) along with solutions and commentary for course assignments.
