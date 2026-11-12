@@ -35,7 +35,6 @@ uv sync
 ### 2. Building & Training a Model
 
 ```python
-import numpy as np
 from tinny import nn
 from tinny.utils import softmax, chunks
 
