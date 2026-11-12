@@ -3,13 +3,12 @@
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org/)
 [![NumPy](https://img.shields.io/badge/NumPy-2.0+-013243.svg?style=flat&logo=numpy&logoColor=white)](https://numpy.org/)
-[![Tests](https://img.shields.io/badge/tests-10%20passed-brightgreen.svg?style=flat&logo=pytest&logoColor=white)](https://docs.pytest.org/)
 [![Theory Notes](https://img.shields.io/badge/Theory_Notes-barhanc.github.io-8A2BE2.svg?style=flat)](https://barhanc.github.io/notes)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 A minimal, educational neural network and energy-based model library implemented from scratch in pure **NumPy**.
 
-`tinny` was created to demystify deep learning internals: no opaque autograd magic, no heavy framework bloat — just explicit mathematical operations, vectorized tensor calculus, and property-tested analytical gradient backpropagation.
+`tinny` was created to demystify deep learning internals: no opaque autograd magic, no heavy framework bloat — just explicit mathematical operations, vectorized tensor calculus, and property-tested analytical gradient backpropagation. See the [`notebooks/`](./notebooks/) directory for experiment implementations (including MLPs, CNNs, Autoencoders, GANs, and DBNs) along with solutions and commentary for course assignments.
 
 ---
 
@@ -64,39 +63,4 @@ model.backward(grad_output)
 # Update parameters via optimizer
 optimizer = nn.Adam(model.parameters(), lr=1e-3)
 optimizer.step()
-```
-
----
-
-## Model Zoo & Notebook Experiments
-
-Explore complete, runnable implementations in the [`notebooks/`](./notebooks/) directory:
-
-| Experiment | Description | Architecture / Method |
-| :--- | :--- | :--- |
-| [**`mnist_mlp.ipynb`**](./notebooks/mnist_mlp.ipynb) | Multi-Layer Perceptron on MNIST | Dense + ReLU + Softmax, mini-batch SGD / Adam |
-| [**`mnist_cnn.ipynb`**](./notebooks/mnist_cnn.ipynb) | Convolutional Neural Network on MNIST | `Conv2D` (im2col/col2im) + `MaxPool2D` + Cross-Entropy |
-| [**`mnist_ae.ipynb`**](./notebooks/mnist_ae.ipynb) | Autoencoder Reconstruction | Symmetric encoder-decoder with Mean Squared Error (MSE) |
-| [**`mnist_dbn.ipynb`**](./notebooks/mnist_dbn.ipynb) | Deep Belief Network Pretraining & Sampling | Stacked RBMs trained via Contrastive Divergence ($CD_k$) |
-| [**`mnist_gan.ipynb`**](./notebooks/mnist_gan.ipynb) | Generative Adversarial Network | Minimax adversarial game with Generator & Discriminator |
-
----
-
-## Academic Coursework Solutions
-
-The [`notebooks/course/`](./notebooks/course/) folder contains comprehensive solutions to the **Neural Networks and Deep Learning** course at AGH University (Labs 01 through 13), accompanied by personal commentary, mathematical notes, and critiques:
-
-- **Lab 01–03**: Perceptron foundations, backpropagation from scratch, and optimization dynamics.
-- **Lab 04–06**: Modern architectures, regularizations (Dropout, BatchNorm), and convolutional operators.
-- **Lab 07–09**: Recurrent architectures, sequence modeling, and representation learning.
-- **Lab 10–13**: Generative models, Autoencoders, Energy-Based Models, and modern advancements.
-
----
-
-## Running Tests
-
-Validate analytical layer gradients against numerical finite-difference approximations:
-
-```bash
-uv run pytest
 ```
